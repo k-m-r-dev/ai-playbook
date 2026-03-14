@@ -197,10 +197,10 @@ append_block \
   "/AGENTS.md" \
   "/CLAUDE.md" \
   "/skills-lock.json" \
-  "/.claude/skills/" \
-  "/.cursor/rules/" \
-  "/.github/agents/" \
-  "/.github/instructions/"
+  "/.claude/skills" \
+  "/.cursor/rules" \
+  "/.github/agents" \
+  "/.github/instructions"
 
 printf 'Installed %s overlay into %s using %s mode.\n' "$PLATFORM" "$CLIENT_REPO" "$MODE"
 printf 'Managed state stored at %s\n' "$MANIFEST_PATH"
