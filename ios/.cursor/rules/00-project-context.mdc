@@ -1,0 +1,15 @@
+---
+description: Native iOS repository context and core engineering standards
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Native iOS Project Context
+
+- This is a native iOS codebase using Swift and Apple platform tooling
+- Prefer explicit architecture boundaries: app composition, features, core services, design system, testing
+- Keep this repository easy for humans and agents to reason about
+- Centralize user-facing copy and non-user constants instead of scattering them across implementation files
+- Do not hardcode secrets or log sensitive data
+- Add or update tests when behavior changes

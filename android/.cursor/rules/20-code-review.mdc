@@ -1,0 +1,15 @@
+---
+description: Review heuristics for native Android code changes
+globs:
+  - "**/*.kt"
+  - "**/*.xml"
+alwaysApply: false
+---
+
+# Native Android Review Focus
+
+- Check for correctness regressions first
+- Look for unsafe concurrency, missing cancellation, and main-thread misuse
+- Verify error handling, security boundaries, and sensitive-data protection
+- Check that copy and constants are centralized
+- Confirm tests cover new behavior and failure paths

@@ -1,0 +1,15 @@
+---
+description: Native Android repository context and core engineering standards
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Native Android Project Context
+
+- This is a native Android codebase using Kotlin and Gradle-based tooling
+- Prefer explicit architecture boundaries: app wiring, features, core services, design system, testing
+- Keep this repository easy for humans and agents to reason about
+- Centralize user-facing copy and non-user constants instead of scattering them across implementation files
+- Do not hardcode secrets or log sensitive data
+- Add or update tests when behavior changes

@@ -1,0 +1,17 @@
+---
+description: Planning and implementation workflow for native iOS changes
+globs:
+  - "**/*.swift"
+  - "**/*.xcodeproj/**"
+  - "**/*.xcworkspace/**"
+  - "**/*.plist"
+alwaysApply: true
+---
+
+# Native iOS Agent Workflow
+
+- Inspect existing patterns before creating new ones
+- Prefer small, reviewable diffs over broad rewrites
+- Keep UI, domain logic, data access, and platform integrations separated
+- Prefer strong typing, explicit dependencies, and cancellable async work
+- Flag ambiguous requirements instead of guessing when behavior may be unsafe
