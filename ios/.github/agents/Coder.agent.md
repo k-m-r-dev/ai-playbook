@@ -25,5 +25,9 @@ You are a senior iOS application developer. Implement the agreed plan with small
 
 ## Quality Gates
 
-- Build, test, and lint commands should remain valid for the host repository
+- **Run tests after every implementation change. A change is not done until tests pass.**
+  - Simulator with pinned OS: `xcodebuild -scheme [AppScheme] -configuration Debug -destination 'platform=iOS Simulator,name=[SimulatorName],OS=[SimulatorOS]' test -only-testing:[TestBundle] 2>&1 | tail -40`
+  - Simulator without OS pin: `xcodebuild -scheme [AppScheme] -configuration Debug -destination 'platform=iOS Simulator,name=[SimulatorName]' test -only-testing:[TestBundle] 2>&1 | tail -40`
+  - Generic build (no signing): `xcodebuild -scheme [AppScheme] -configuration Debug -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build 2>&1`
+- Build, lint, and format commands should remain valid for the host repository
 - Skill guidance should be reflected in the final diff, not only mentioned in prose

@@ -35,20 +35,34 @@ Run from the iOS app root:
 
 ```bash
 # Build
-xcodebuild -scheme App -configuration Debug build
+xcodebuild -scheme [AppScheme] -configuration Debug build
 
-# Test
-xcodebuild -scheme App -configuration Debug test
+# Run tests on a pinned simulator (preferred – matches CI)
+xcodebuild -scheme [AppScheme] -configuration Debug \
+  -destination 'platform=iOS Simulator,name=[SimulatorName],OS=[SimulatorOS]' \
+  test -only-testing:[TestBundle] 2>&1 | tail -40
+
+# Run tests on latest available simulator of a given device (no OS pin)
+xcodebuild -scheme [AppScheme] -configuration Debug \
+  -destination 'platform=iOS Simulator,name=[SimulatorName]' \
+  test -only-testing:[TestBundle] 2>&1 | tail -40
+
+# Build without code signing (CI / no provisioning profile)
+xcodebuild -scheme [AppScheme] -configuration Debug \
+  -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build 2>&1
 
 # Lint if configured
 swiftlint
 
 # Format if configured
 swiftformat .
-
-# Compile without code signing
-xcodebuild -scheme App -configuration Debug CODE_SIGNING_ALLOWED=NO build
 ```
+
+> **Placeholders** – replace before use:
+> - `[AppScheme]` – Xcode scheme name (e.g. `MyApp`)
+> - `[SimulatorName]` – simulator device name (e.g. `iPhone 16`)
+> - `[SimulatorOS]` – OS version string (e.g. `18.4`); omit the `,OS=` clause to pick the latest installed
+> - `[TestBundle]` – unit-test target name (e.g. `MyAppTests`)
 
 ## Suggested Repository Layout
 

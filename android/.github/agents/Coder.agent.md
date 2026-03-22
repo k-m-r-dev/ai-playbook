@@ -25,5 +25,9 @@ You are a senior Android application developer. Implement the agreed plan with s
 
 ## Quality Gates
 
-- Build, test, and lint commands should remain valid for the host repository
+- **Run tests after every implementation change. A change is not done until tests pass.**
+  - All unit tests: `./gradlew testDebugUnitTest`
+  - Module-scoped unit tests: `./gradlew :[module]:testDebugUnitTest`
+  - Instrumented tests (requires device/emulator): `./gradlew connectedDebugAndroidTest`
+- Build, lint, and format commands should remain valid for the host repository
 - Skill guidance should be reflected in the final diff, not only mentioned in prose

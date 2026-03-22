@@ -179,18 +179,25 @@ Source: [Link to Figma or design file]
 
 ## Build and verification after changes
 
-- After making code changes (especially when adding new files, types, or dependencies), run an app build to surface compile-time errors early.
-- Agents and developers should assume the app will be built immediately after edits and treat a clean build as part of "done".
+- After making code changes, run a build **and the test suite** before considering the work done. A passing build alone is not sufficient.
+- Run unit tests with `./gradlew testDebugUnitTest` after every change. Run module-scoped tests (`./gradlew :[module]:testDebugUnitTest`) for faster feedback during active development.
+- Run instrumented tests (`./gradlew connectedDebugAndroidTest`) when changes affect UI, navigation, or platform integrations that cannot be covered by unit tests alone.
 
 ```bash
 # Build debug APK
 ./gradlew assembleDebug
 
-# Run unit tests
-./gradlew test
+# Run all unit tests (debug variant)
+./gradlew testDebugUnitTest
 
-# Run instrumented tests
-./gradlew connectedAndroidTest
+# Run unit tests for a specific module
+./gradlew :[module]:testDebugUnitTest
+
+# Run instrumented tests on connected device or emulator
+./gradlew connectedDebugAndroidTest
+
+# Run instrumented tests for a specific module
+./gradlew :[module]:connectedDebugAndroidTest
 
 # Lint
 ./gradlew lint
@@ -201,3 +208,5 @@ Source: [Link to Figma or design file]
 # Ktlint format (if configured)
 ./gradlew ktlintFormat
 ```
+
+> **Placeholder** – replace `[module]` with the Gradle module name (e.g. `feature:home`, `core:data`).

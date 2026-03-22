@@ -27,6 +27,10 @@ Build maintainable native Android software with clear architecture, strong typin
 
 ## Quality Requirements
 
+- **Run tests after every implementation change. A change is not done until tests pass.**
+  - Unit tests: `./gradlew testDebugUnitTest`
+  - Module-scoped: `./gradlew :[module]:testDebugUnitTest`
+  - Instrumented (requires device/emulator): `./gradlew connectedDebugAndroidTest`
 - Add or update tests for changed behavior
 - Preserve backwards compatibility unless the change explicitly includes a migration
 - Avoid broad refactors unless they are necessary for correctness or maintainability

@@ -27,6 +27,10 @@ Build maintainable native iOS software with clear architecture, strong typing, s
 
 ## Quality Requirements
 
+- **Run tests after every implementation change. A change is not done until tests pass.**
+  - Pinned simulator: `xcodebuild -scheme [AppScheme] -configuration Debug -destination 'platform=iOS Simulator,name=[SimulatorName],OS=[SimulatorOS]' test -only-testing:[TestBundle] 2>&1 | tail -40`
+  - Latest simulator: `xcodebuild -scheme [AppScheme] -configuration Debug -destination 'platform=iOS Simulator,name=[SimulatorName]' test -only-testing:[TestBundle] 2>&1 | tail -40`
+  - Generic build (no signing): `xcodebuild -scheme [AppScheme] -configuration Debug -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build 2>&1`
 - Add or update tests for changed behavior
 - Preserve backwards compatibility unless the change explicitly includes a migration
 - Avoid broad refactors unless they are necessary for correctness or maintainability

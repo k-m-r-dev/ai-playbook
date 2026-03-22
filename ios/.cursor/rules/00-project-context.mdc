@@ -9,6 +9,7 @@ alwaysApply: true
 
 - This is a native iOS codebase using Swift and Apple platform tooling
 - **Read `ARCHITECTURE.md` before planning or implementing features — it defines the app shell, navigation, DI, data layer, and feature checklist for this project**
+- **Run tests after every change before considering work done** (`xcodebuild -scheme [AppScheme] -configuration Debug -destination 'platform=iOS Simulator,name=[SimulatorName]' test -only-testing:[TestBundle] 2>&1 | tail -40`)
 - Prefer explicit architecture boundaries: app composition, features, core services, design system, testing
 - Keep this repository easy for humans and agents to reason about
 - Centralize user-facing copy and non-user constants instead of scattering them across implementation files

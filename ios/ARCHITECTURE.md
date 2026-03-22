@@ -177,15 +177,27 @@ Source: [Link to Figma or design file]
 
 ## Build and verification after changes
 
-- After making code changes (especially when adding new files, types, or dependencies), run an app build (`⌘B` in Xcode or `xcodebuild` from the terminal) to surface compile-time errors early.
-- Agents and developers should assume the app will be built immediately after edits and treat a clean build as part of "done".
+- After making code changes, run a build **and the test suite** before considering the work done. A passing build alone is not sufficient.
+- Use the pinned-simulator form in CI and when OS-specific behaviour matters; use the no-OS-pin form for quick local feedback.
+- The generic-platform build (no signing) is the minimum check that must pass in environments without a provisioning profile.
 
 ```bash
 # Build
-xcodebuild -scheme [SchemeName] -configuration Debug build
+xcodebuild -scheme [AppScheme] -configuration Debug build
 
-# Test
-xcodebuild -scheme [SchemeName] -configuration Debug test
+# Run tests on a pinned simulator (preferred – matches CI)
+xcodebuild -scheme [AppScheme] -configuration Debug \
+  -destination 'platform=iOS Simulator,name=[SimulatorName],OS=[SimulatorOS]' \
+  test -only-testing:[TestBundle] 2>&1 | tail -40
+
+# Run tests on latest available simulator of a given device (no OS pin)
+xcodebuild -scheme [AppScheme] -configuration Debug \
+  -destination 'platform=iOS Simulator,name=[SimulatorName]' \
+  test -only-testing:[TestBundle] 2>&1 | tail -40
+
+# Build without code signing (CI / no provisioning profile)
+xcodebuild -scheme [AppScheme] -configuration Debug \
+  -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build 2>&1
 
 # Lint
 swiftlint
@@ -193,3 +205,9 @@ swiftlint
 # Format
 swiftformat .
 ```
+
+> **Placeholders** – replace before use:
+> - `[AppScheme]` – Xcode scheme name (e.g. `MyApp`)
+> - `[SimulatorName]` – simulator device name (e.g. `iPhone 16`)
+> - `[SimulatorOS]` – OS version string (e.g. `18.4`); omit the `,OS=` clause to pick the latest installed
+> - `[TestBundle]` – unit-test target name (e.g. `MyAppTests`)

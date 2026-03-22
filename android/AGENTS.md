@@ -37,11 +37,17 @@ Run from the Android app root:
 # Build
 ./gradlew assembleDebug
 
-# Unit tests
+# Unit tests (runs all unit tests for the debug variant)
 ./gradlew testDebugUnitTest
 
-# Instrumentation tests if configured
+# Unit tests for a specific module
+./gradlew :[module]:testDebugUnitTest
+
+# Instrumented tests on connected device or emulator
 ./gradlew connectedDebugAndroidTest
+
+# Instrumented tests for a specific module
+./gradlew :[module]:connectedDebugAndroidTest
 
 # Lint
 ./gradlew lint
