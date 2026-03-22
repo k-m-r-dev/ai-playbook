@@ -8,6 +8,17 @@ description: >
 
 # iOS Architecture
 
+## Project Architecture Document
+
+Before applying any of the guidance below, read **`ARCHITECTURE.md`** in the repository root.
+That file is the project-specific source of truth for:
+- App shell pattern (RootView, NavigationStack, AppSharedState, AppEventPublisher)
+- DI ownership rules and singleton registration
+- Data layer conventions (APIClient, DTOs, repository mapping)
+- Step-by-step checklist for adding a new feature
+
+The guidance in this skill describes general patterns. `ARCHITECTURE.md` gives the concrete decisions for this project and takes precedence.
+
 ## When To Use
 
 Use before implementing features or refactors that affect repository structure, module boundaries, dependency direction, or planning decisions.

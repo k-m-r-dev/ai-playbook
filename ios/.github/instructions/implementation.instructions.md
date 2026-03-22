@@ -11,6 +11,7 @@ Build maintainable native iOS software with clear architecture, strong typing, s
 
 ## Architecture Rules
 
+- **Read `ARCHITECTURE.md` before implementing any feature, refactor, or structural change.** It is the project-specific source of truth for the app shell, navigation, DI, data layer, and feature checklist.
 - Keep app composition, feature logic, shared services, and design system concerns separate
 - New work should follow the modern project structure rather than extending obsolete patterns
 - Prefer explicit boundaries between UI, domain, data access, and platform integrations

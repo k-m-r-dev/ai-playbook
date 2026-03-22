@@ -8,6 +8,7 @@ alwaysApply: true
 # Native iOS Project Context
 
 - This is a native iOS codebase using Swift and Apple platform tooling
+- **Read `ARCHITECTURE.md` before planning or implementing features — it defines the app shell, navigation, DI, data layer, and feature checklist for this project**
 - Prefer explicit architecture boundaries: app composition, features, core services, design system, testing
 - Keep this repository easy for humans and agents to reason about
 - Centralize user-facing copy and non-user constants instead of scattering them across implementation files

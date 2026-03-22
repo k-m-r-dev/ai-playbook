@@ -20,6 +20,15 @@ Supported tools:
 - Prefer explicit architectural rules over vague preferences
 - Optimize instructions for correctness, safety, and maintainability
 
+## Architecture Document
+
+The project's concrete architecture decisions live in `ARCHITECTURE.md`.
+
+- **Read `ARCHITECTURE.md` before planning or implementing any feature, refactor, or structural change.**
+- It defines the app shell pattern, navigation model, DI ownership rules, data layer conventions, and the step-by-step checklist for adding a new feature.
+- If a general principle in this file conflicts with a specific decision in `ARCHITECTURE.md`, the architecture document takes precedence.
+- When updating architecture decisions in a client project, update `ARCHITECTURE.md` first, then keep this file aligned.
+
 ## Commands
 
 Run from the iOS app root:
@@ -98,6 +107,7 @@ xcodebuild -scheme App -configuration Debug CODE_SIGNING_ALLOWED=NO build
 - Claude: entry point is `CLAUDE.md`, which should reference this file
 - Cursor: entry point is `.cursor/rules/`, which should align with this file
 - GitHub Copilot: `.github/instructions/` and `.github/agents/` should reinforce this file
+- MCP Servers: use corresponding MCP servers for github, figma
 - Other tools: point them here first, then to tool-specific overlays only if needed
 
 ## Skills

@@ -8,6 +8,7 @@ Give any supported coding agent enough context to make safer decisions with less
 
 ## Included Patterns
 
+- A base architecture document in `ARCHITECTURE.md`
 - A shared source of truth in `AGENTS.md`
 - Claude-compatible entrypoint and skills in `CLAUDE.md` and `.claude/`
 - Cursor-compatible rules in `.cursor/rules/`
@@ -46,7 +47,8 @@ Give any supported coding agent enough context to make safer decisions with less
 
 ## Customization Order
 
-1. Update module boundaries and folder conventions.
+1. Fill in `ARCHITECTURE.md` with project-specific paths, environments, and brand values.
+2. Update module boundaries and folder conventions.
 2. Replace placeholder commands with real build, test, lint, and format commands.
 3. Add project-specific security, performance, and compliance rules.
 4. Extend skill packs for networking, persistence, design system, testing, and release workflows.

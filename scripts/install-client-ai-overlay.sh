@@ -144,6 +144,7 @@ BLOCK_END="# END ${NAME}:${PLATFORM}"
 MAPPINGS=(
   "AGENTS.md|AGENTS.md"
   "CLAUDE.md|CLAUDE.md"
+  "ARCHITECTURE.md|ARCHITECTURE.md"
   "skills-lock.json|skills-lock.json"
   ".claude/skills|.claude/skills"
   ".cursor/rules|.cursor/rules"
@@ -196,6 +197,7 @@ append_block \
   "$BLOCK_END" \
   "/AGENTS.md" \
   "/CLAUDE.md" \
+  "/ARCHITECTURE.md" \
   "/skills-lock.json" \
   "/.claude/skills" \
   "/.cursor/rules" \

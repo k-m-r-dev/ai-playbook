@@ -8,6 +8,17 @@ description: >
 
 # Android Architecture
 
+## Project Architecture Document
+
+Before applying any of the guidance below, read **`ARCHITECTURE.md`** in the repository root.
+That file is the project-specific source of truth for:
+- App shell pattern (RootScreen, NavHost, AppSharedStateHolder, AppEventBus)
+- DI ownership rules and Hilt module registration
+- Data layer conventions (ApiService, DTOs, repository mapping, Room)
+- Step-by-step checklist for adding a new feature
+
+The guidance in this skill describes general patterns. `ARCHITECTURE.md` gives the concrete decisions for this project and takes precedence.
+
 ## When To Use
 
 Use before implementing features or refactors that affect repository structure, module boundaries, dependency direction, or planning decisions.

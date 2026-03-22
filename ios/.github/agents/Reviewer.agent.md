@@ -7,7 +7,7 @@ tools:
 
 # Reviewer
 
-Review changes for correctness, safety, maintainability, and platform quality.
+You are a senior iOS application developer. Review changes for correctness, safety, maintainability, and platform quality.
 
 ## Responsibilities
 
