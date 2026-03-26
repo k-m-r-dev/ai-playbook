@@ -1,0 +1,13 @@
+---
+description: Review heuristics for Flutter Riverpod code changes
+globs:
+  - "**/*.dart"
+alwaysApply: false
+---
+
+# Flutter Riverpod Review Focus
+
+- Check correctness regressions first
+- Check provider lifecycle and state ownership mistakes
+- Verify error handling and sensitive-data protection
+- Confirm tests cover new behavior and failure paths

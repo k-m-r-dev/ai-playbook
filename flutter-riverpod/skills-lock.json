@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "skills": {
+    "flutter-architecture": {
+      "source": "local-template/flutter-architecture",
+      "sourceType": "local",
+      "computedHash": "template-v1-flutter-architecture"
+    },
+    "flutter-riverpod-architecture": {
+      "source": "local-template/flutter-riverpod-architecture",
+      "sourceType": "local",
+      "computedHash": "template-v1-flutter-riverpod-architecture"
+    },
+    "native-data-fetching": {
+      "source": "local-template/native-data-fetching",
+      "sourceType": "local",
+      "computedHash": "template-v1-native-data-fetching"
+    },
+    "security-and-privacy": {
+      "source": "local-template/security-and-privacy",
+      "sourceType": "local",
+      "computedHash": "template-v1-security-and-privacy"
+    },
+    "flutter-platform-quality": {
+      "source": "local-template/flutter-platform-quality",
+      "sourceType": "local",
+      "computedHash": "template-v1-flutter-platform-quality"
+    }
+  }
+}

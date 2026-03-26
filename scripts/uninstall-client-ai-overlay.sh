@@ -7,7 +7,7 @@ usage() {
 Usage:
   uninstall-client-ai-overlay.sh \
     --client-repo /path/to/client-repo \
-    --platform ios|android \
+    --platform ios|android|flutter-riverpod|flutter-bloc \
     [--name ai-playbook]
 
 Behavior:
@@ -82,7 +82,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -n "$CLIENT_REPO" ]] || die "--client-repo is required"
-[[ "$PLATFORM" == "ios" || "$PLATFORM" == "android" ]] || die "--platform must be ios or android"
+[[ "$PLATFORM" == "ios" || "$PLATFORM" == "android" || "$PLATFORM" == "flutter-riverpod" || "$PLATFORM" == "flutter-bloc" ]] || die "--platform must be ios, android, flutter-riverpod, or flutter-bloc"
 [[ -d "$CLIENT_REPO" ]] || die "Client repository does not exist: $CLIENT_REPO"
 
 CLIENT_REPO="$(real_dir "$CLIENT_REPO")"

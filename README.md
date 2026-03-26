@@ -8,6 +8,8 @@ This folder is a starter layout for storing AI playbooks in your own private Git
 ai-playbook/
   ios/
   android/
+  flutter-riverpod/
+  flutter-bloc/
   scripts/
     bootstrap-playbooks-from-aitools.sh
     install-client-ai-overlay.sh
@@ -18,15 +20,17 @@ ai-playbook/
 
 - `ios/`: copy the contents of `aitools/ios/`
 - `android/`: copy the contents of `aitools/android/`
+- `flutter-riverpod/`: copy the contents of `aitools/flutter-riverpod/`
+- `flutter-bloc/`: copy the contents of `aitools/flutter-bloc/`
 
 ## Bootstrap Example
 
-If you already have a repository that contains `aitools/ios` and `aitools/android`, you can populate this repository template automatically:
+If you already have a repository that contains `aitools/ios`, `aitools/android`, and optional Flutter variants (`aitools/flutter-riverpod`, `aitools/flutter-bloc`), you can populate this repository template automatically:
 
 1. Create or clone your private `ai-playbook` repository.
 2. Copy the `scripts/` folder from this template into that repository.
 3. Run the bootstrap script from this repository, pointing `--source-repo` at the repo that contains `aitools/` and `--dest-repo` at your private `ai-playbook` repo.
-4. Review the generated `ios/` and `android/` folders in your private repo, then commit and push them.
+4. Review the generated platform folders in your private repo, then commit and push them.
 
 ```bash
 # example: seed ~/private/ai-playbook from this repository
@@ -42,6 +46,8 @@ The bootstrap script copies:
 
 - `aitools/ios` into `ai-playbook/ios`
 - `aitools/android` into `ai-playbook/android`
+- `aitools/flutter-riverpod` into `ai-playbook/flutter-riverpod`
+- `aitools/flutter-bloc` into `ai-playbook/flutter-bloc`
 
 It is meant for initializing or refreshing your private playbook repository, not for installing files into a client project. For client projects, use `install-client-ai-overlay.sh` instead.
 
@@ -58,6 +64,7 @@ The installer manages these paths inside the client repository root:
 
 - `AGENTS.md`
 - `CLAUDE.md`
+- `ARCHITECTURE.md`
 - `skills-lock.json`
 - `.claude/skills`
 - `.cursor/rules`
@@ -84,10 +91,20 @@ bash scripts/uninstall-client-ai-overlay.sh \
   --platform ios
 ```
 
+Flutter example:
+
+```bash
+bash scripts/install-client-ai-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/clients/acme-flutter-app \
+  --platform flutter-riverpod \
+  --mode symlink
+```
+
 ## Recommended Daily Workflow
 
 1. Keep the source of truth in your own private repository, for example `ai-playbook`.
-2. Use `bootstrap-playbooks-from-aitools.sh` once to seed `ios/` and `android/` from a repository that already contains `aitools/`.
+2. Use `bootstrap-playbooks-from-aitools.sh` once to seed the platform folders you need (`ios`, `android`, `flutter-riverpod`, `flutter-bloc`) from a repository that already contains `aitools/`.
 3. Install the overlay into the client repository locally using `symlink` mode.
 4. Confirm `git status` in the client repository shows no staged or tracked AI overlay files.
 5. Use `copy` mode only if a specific tool does not follow symlinks correctly.

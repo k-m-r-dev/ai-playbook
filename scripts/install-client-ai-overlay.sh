@@ -8,7 +8,7 @@ Usage:
   install-client-ai-overlay.sh \
     --source-repo /path/to/ai-playbook \
     --client-repo /path/to/client-repo \
-    --platform ios|android \
+    --platform ios|android|flutter-riverpod|flutter-bloc \
     [--mode symlink|copy] \
     [--name ai-playbook]
 
@@ -114,7 +114,7 @@ done
 
 [[ -n "$SOURCE_REPO" ]] || die "--source-repo is required"
 [[ -n "$CLIENT_REPO" ]] || die "--client-repo is required"
-[[ "$PLATFORM" == "ios" || "$PLATFORM" == "android" ]] || die "--platform must be ios or android"
+[[ "$PLATFORM" == "ios" || "$PLATFORM" == "android" || "$PLATFORM" == "flutter-riverpod" || "$PLATFORM" == "flutter-bloc" ]] || die "--platform must be ios, android, flutter-riverpod, or flutter-bloc"
 [[ "$MODE" == "symlink" || "$MODE" == "copy" ]] || die "--mode must be symlink or copy"
 
 [[ -d "$SOURCE_REPO" ]] || die "Source repository does not exist: $SOURCE_REPO"

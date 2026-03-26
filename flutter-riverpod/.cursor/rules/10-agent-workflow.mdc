@@ -1,0 +1,14 @@
+---
+description: Planning and implementation workflow for Flutter Riverpod changes
+globs:
+  - "**/*.dart"
+  - "pubspec.yaml"
+alwaysApply: true
+---
+
+# Flutter Riverpod Agent Workflow
+
+- Inspect existing patterns before creating new ones
+- Prefer small, reviewable diffs over broad rewrites
+- Keep widgets, domain logic, and data access separated
+- Keep provider ownership explicit and testable

@@ -1,0 +1,16 @@
+---
+description: Flutter Riverpod repository context and core engineering standards
+globs:
+  - "**/*.dart"
+  - "pubspec.yaml"
+alwaysApply: true
+---
+
+# Flutter Riverpod Project Context
+
+- This is a Flutter codebase using Dart and Riverpod state management
+- Read `ARCHITECTURE.md` before planning or implementing features
+- Run tests after every change before considering work done (`flutter test`)
+- Keep app, feature, core, and design system boundaries explicit
+- Do not hardcode secrets or log sensitive data
+- Add or update tests when behavior changes

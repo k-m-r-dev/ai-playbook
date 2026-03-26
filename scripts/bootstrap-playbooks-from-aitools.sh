@@ -8,7 +8,7 @@ Usage:
   bootstrap-playbooks-from-aitools.sh \
     --source-repo /path/to/repo-containing-aitools \
     --dest-repo /path/to/ai-playbook \
-    [--platform ios|android|all] \
+    [--platform ios|android|flutter-riverpod|flutter-bloc|all] \
     [--force]
 
 Behavior:
@@ -94,7 +94,7 @@ done
 
 [[ -n "$SOURCE_REPO" ]] || die "--source-repo is required"
 [[ -n "$DEST_REPO" ]] || die "--dest-repo is required"
-[[ "$PLATFORM" == "ios" || "$PLATFORM" == "android" || "$PLATFORM" == "all" ]] || die "--platform must be ios, android, or all"
+[[ "$PLATFORM" == "ios" || "$PLATFORM" == "android" || "$PLATFORM" == "flutter-riverpod" || "$PLATFORM" == "flutter-bloc" || "$PLATFORM" == "all" ]] || die "--platform must be ios, android, flutter-riverpod, flutter-bloc, or all"
 
 [[ -d "$SOURCE_REPO" ]] || die "Source repository does not exist: $SOURCE_REPO"
 [[ -d "$DEST_REPO" ]] || die "Destination repository does not exist: $DEST_REPO"
@@ -104,7 +104,7 @@ DEST_REPO="$(real_dir "$DEST_REPO")"
 
 PLATFORMS=()
 if [[ "$PLATFORM" == "all" ]]; then
-  PLATFORMS=(ios android)
+  PLATFORMS=(ios android flutter-riverpod flutter-bloc)
 else
   PLATFORMS=("$PLATFORM")
 fi
