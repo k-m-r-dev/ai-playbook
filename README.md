@@ -81,6 +81,8 @@ That layout avoids replacing the entire `.github/`, `.claude/`, or `.cursor/` di
 
 **Architecture routing (Cursor / Claude / Copilot):** `.cursor/rules/15-architecture.mdc`, the **`architecture-playbook`** Claude skill, and **`architecture.instructions.md`** under **`.github/instructions/`** share the **same body** as the session trio does for `SESSION_WORKFLOW.md`—thin pointers only; the real content stays in root **`ARCHITECTURE.md`**.
 
+**Flutter Copilot baseline:** In **`flutter-riverpod`** and **`flutter-bloc`**, **`.github/instructions/implementation.instructions.md`** is the generic implementation template (codegen, feature layout, state management, repositories, pitfalls). Per-client facts (asset DB paths, `tools/` scripts, domain notes) belong in **`doc/copilot-project-appendix.md`** in the client repo—use the playbook’s **`doc/copilot-project-appendix.md`** as a starter; it is **not** installed by **`install-client-ai-overlay.sh`** (copy it if you want that layout).
+
 ## Install Example
 
 ```bash

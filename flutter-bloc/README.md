@@ -8,7 +8,7 @@ This folder is a starter template for adding high-quality AI coding context to a
 - A shared source of truth in `AGENTS.md`
 - Claude-compatible entrypoint and skills in `CLAUDE.md` and `.claude/`
 - Cursor-compatible rules in `.cursor/rules/`
-- Copilot-compatible instructions and agent roles in `.github/`
+- Copilot-compatible instructions and agent roles in `.github/` (generic coding patterns live in **`implementation.instructions.md`**; put app-only facts in **`doc/copilot-project-appendix.md`** when you add that file in the client repo)
 - A starter `skills-lock.json` registry pattern
 
 ## Customization Order
