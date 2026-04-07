@@ -10,6 +10,7 @@ This folder is a starter template for adding high-quality AI coding context to a
 - Cursor-compatible rules in `.cursor/rules/`
 - Copilot-compatible instructions and agent roles in `.github/`
 - A starter `skills-lock.json` registry pattern
+- Architecture routing: **Cursor** `15-architecture.mdc`, **Claude** `architecture-playbook`, and **Copilot** `architecture.instructions.md` share the **identical routing body** (only tool metadata differs); the full structure doc lives only in **`ARCHITECTURE.md`** (follows install **`--mode`** like other root files).
 - Session workflow: `.workflow/` (**copied** at install) and root `SESSION_WORKFLOW.md` (follows install **`--mode`**, usually **symlink**). **Cursor** `20-session-progress.mdc`, **Claude** `session-progress-workflow`, and **Copilot** `session-progress.instructions.md` share the **identical routing body** (only tool metadata differs); full lifecycle and templates live only in **`SESSION_WORKFLOW.md`**; project state only under **`.workflow/`**
 
 ## Customization Order

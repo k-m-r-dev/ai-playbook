@@ -79,6 +79,8 @@ That layout avoids replacing the entire `.github/`, `.claude/`, or `.cursor/` di
 
 **Session workflow install mode:** `.workflow/` is **always copied** so session logs and trackers stay real files in the client checkout. **`SESSION_WORKFLOW.md` follows `--mode`** like `AGENTS.md`, `CLAUDE.md`, and `ARCHITECTURE.md` (default symlink to your private `ai-playbook`). Use **`--mode copy`** for the whole overlay when a tool does not follow symlinks.
 
+**Architecture routing (Cursor / Claude / Copilot):** `.cursor/rules/15-architecture.mdc`, the **`architecture-playbook`** Claude skill, and **`architecture.instructions.md`** under **`.github/instructions/`** share the **same body** as the session trio does for `SESSION_WORKFLOW.md`—thin pointers only; the real content stays in root **`ARCHITECTURE.md`**.
+
 ## Install Example
 
 ```bash

@@ -30,6 +30,11 @@
       "source": "local-template/session-progress-workflow",
       "sourceType": "local",
       "computedHash": "template-v1-session-progress-workflow"
+    },
+    "architecture-playbook": {
+      "source": "local-template/architecture-playbook",
+      "sourceType": "local",
+      "computedHash": "template-v1-architecture-playbook"
     }
   }
 }

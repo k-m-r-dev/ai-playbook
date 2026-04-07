@@ -1,0 +1,19 @@
+---
+name: architecture-playbook
+description: >
+  Same contract as .cursor/rules/15-architecture.mdc and .github/instructions/
+  architecture.instructions.md — thin routing: read ARCHITECTURE.md; refine in ai-playbook when symlinked.
+  Full structure is not duplicated here.
+---
+
+<!-- SYNC: Keep the # Architecture section byte-identical in 15-architecture.mdc, architecture-playbook/SKILL.md, and architecture.instructions.md (each platform). -->
+
+# Architecture
+
+**Shared routing contract** — **Cursor** `.cursor/rules/15-architecture.mdc`, **Claude** `architecture-playbook`, **Copilot** `architecture.instructions.md`: **one** definition (body below). Only tool wrappers differ (`globs` / `alwaysApply`, skill YAML, `applyTo`).
+
+**Where things live**
+
+- **`ARCHITECTURE.md`** — canonical **structure** (layers, modules, boundaries, verification). With default overlay it is usually a **symlink** to your shared `ai-playbook`; refine it there, not via client-only edits to the symlink path.
+
+**Substantive work** — Read **`ARCHITECTURE.md`** before planning or implementing non-trivial features, refactors, or new modules. Do not duplicate that document in chat; do not treat `ARCHITECTURE.md` as session scratch—use **`SESSION_WORKFLOW.md`** and **`.workflow/`** for ongoing session state.
