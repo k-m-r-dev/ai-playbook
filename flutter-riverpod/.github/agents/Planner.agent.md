@@ -12,6 +12,7 @@ You are a senior Flutter application developer. Analyze the repository and produ
 ## Responsibilities
 
 - Read `ARCHITECTURE.md` first and align the plan to it
+- For substantive work, read `.workflow/current_session_progress.md` and skim `.workflow/progress_tracker.md`; plan explicit updates per `SESSION_WORKFLOW.md`
 - Inspect existing patterns before proposing changes
 - Identify affected modules, dependencies, and test surfaces
 - Prefer minimal change sets that solve the root problem

@@ -49,6 +49,8 @@ The bootstrap script copies:
 - `aitools/flutter-riverpod` into `ai-playbook/flutter-riverpod`
 - `aitools/flutter-bloc` into `ai-playbook/flutter-bloc`
 
+Each platform folder in this template includes **session workflow** assets—root `.workflow/` (three markdown files) and `SESSION_WORKFLOW.md` at the same level as `AGENTS.md`—so bootstrapping from `aitools/` should carry the same layout into your private playbook. When you refresh from a source repo, ensure `aitools/<platform>` also contains those paths if you want them updated.
+
 It is meant for initializing or refreshing your private playbook repository, not for installing files into a client project. For client projects, use `install-client-ai-overlay.sh` instead.
 
 ## Safety Model
@@ -70,8 +72,12 @@ The installer manages these paths inside the client repository root:
 - `.cursor/rules`
 - `.github/agents`
 - `.github/instructions`
+- `.workflow/` (session progress scratch pad, archive, and tracker)
+- `SESSION_WORKFLOW.md` (playbook for maintaining those files; repository root)
 
 That layout avoids replacing the entire `.github/`, `.claude/`, or `.cursor/` directories and reduces the risk of clobbering client-owned files.
+
+**Session workflow install mode:** `.workflow/` is **always copied** so session logs and trackers stay real files in the client checkout. **`SESSION_WORKFLOW.md` follows `--mode`** like `AGENTS.md`, `CLAUDE.md`, and `ARCHITECTURE.md` (default symlink to your private `ai-playbook`). Use **`--mode copy`** for the whole overlay when a tool does not follow symlinks.
 
 ## Install Example
 
@@ -100,6 +106,29 @@ bash scripts/install-client-ai-overlay.sh \
   --platform flutter-riverpod \
   --mode symlink
 ```
+
+## Add `SESSION_WORKFLOW.md` to an existing overlay
+
+If a client repo was overlaid **before** `SESSION_WORKFLOW.md` existed in the installer mappings, the playbook file will be missing at the repo root even though `AGENTS.md` / `.cursor/rules` / etc. are present. Run:
+
+```bash
+bash scripts/add-session-workflow-to-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/Workspace/self/Furqan \
+  --platform flutter-riverpod
+```
+
+If that client overlay was installed with **`--mode copy`**, pass the same mode:
+
+```bash
+bash scripts/add-session-workflow-to-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/Workspace/self/Furqan \
+  --platform flutter-riverpod \
+  --mode copy
+```
+
+Match `--platform`, `--source-repo`, and **`--mode`** to how you ran `install-client-ai-overlay.sh`. The script requires an existing overlay manifest under `.git/ai-playbook/`.
 
 ## Recommended Daily Workflow
 

@@ -1,0 +1,20 @@
+---
+name: session-progress-workflow
+description: >
+  Same contract as .cursor/rules/20-session-progress.mdc and .github/instructions/
+  session-progress.instructions.md — thin routing: read SESSION_WORKFLOW.md; edit only .workflow/
+  when the playbook is symlinked. Full procedure is never duplicated here.
+---
+
+<!-- SYNC: Keep the # Session progress section byte-identical in 20-session-progress.mdc, session-progress-workflow/SKILL.md, and session-progress.instructions.md (each platform). -->
+
+# Session progress
+
+**Shared routing contract** — **Cursor** `.cursor/rules/20-session-progress.mdc`, **Claude** `session-progress-workflow`, **Copilot** `session-progress.instructions.md`: **one** definition (body below). Only tool wrappers differ (`globs` / `alwaysApply`, skill YAML, `applyTo`).
+
+**Where things live**
+
+- **`SESSION_WORKFLOW.md`** — canonical **process** (templates, lifecycle, verification). With default overlay it is a **symlink** to your shared `ai-playbook`; refine it there, not via client-only edits to the symlink path.
+- **`.workflow/`** — **project-owned** files (copied at install/bootstrap). All session scratch, archive, and tracker updates for **this** repo go **here**.
+
+**Substantive work** — Open **`SESSION_WORKFLOW.md`** and follow it end-to-end. Do not duplicate that playbook in chat; do not treat `SESSION_WORKFLOW.md` as editable project state when it is a symlink.

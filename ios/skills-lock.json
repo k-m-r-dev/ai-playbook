@@ -25,6 +25,11 @@
             "source": "local-template/apple-platform-quality",
             "sourceType": "local",
             "computedHash": "template-v1-apple-platform-quality"
+        },
+        "session-progress-workflow": {
+            "source": "local-template/session-progress-workflow",
+            "sourceType": "local",
+            "computedHash": "template-v1-session-progress-workflow"
         }
     }
 }

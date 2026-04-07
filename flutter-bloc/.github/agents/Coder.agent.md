@@ -21,6 +21,7 @@ You are a senior Flutter application developer. Implement the agreed plan with s
 - Add or update tests for changed behavior
 - Avoid unrelated refactors
 - Follow `flutter-bloc-architecture` for bloc/cubit state ownership
+- Follow `SESSION_WORKFLOW.md` and update `.workflow/*` when work is substantive (see `AGENTS.md`)
 
 ## Quality Gates
 

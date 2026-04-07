@@ -22,6 +22,7 @@ You are a senior iOS application developer. Implement the agreed plan with small
 - Avoid unrelated refactors and avoid hidden side effects
 - Follow `native-ios-architecture` for feature structure and `native-data-fetching` for API work
 - Apply `security-and-privacy` and `apple-platform-quality` when changes affect sensitive data, concurrency, performance, or accessibility
+- Follow `SESSION_WORKFLOW.md` and update `.workflow/*` when work is substantive (see `AGENTS.md`)
 
 ## Quality Gates
 

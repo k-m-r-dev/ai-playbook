@@ -17,6 +17,10 @@ Build maintainable native iOS software with clear architecture, strong typing, s
 - Prefer explicit boundaries between UI, domain, data access, and platform integrations
 - Avoid hidden cross-feature coupling
 
+## Session & progress documentation
+
+- Follow **`SESSION_WORKFLOW.md`** and **`session-progress.instructions.md`**; apply substantive edits only under **`.workflow/`** (see playbook for the checklist—do not duplicate here).
+
 ## Coding Rules
 
 - Prefer Swift language features that improve safety and readability

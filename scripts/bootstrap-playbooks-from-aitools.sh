@@ -14,7 +14,9 @@ Usage:
 Behavior:
   - Copies source content from aitools/<platform> into <dest-repo>/<platform>.
   - Refuses to overwrite a non-empty destination unless --force is provided.
-  - Preserves dot-directories like .claude, .cursor, and .github.
+  - Preserves dot-directories like .claude, .cursor, .github, and .workflow.
+  - Each platform template should include `SESSION_WORKFLOW.md` and `.workflow/` (session
+    progress files); clients install copies of those paths via install-client-ai-overlay.sh.
 
 Examples:
   bash scripts/bootstrap-playbooks-from-aitools.sh \

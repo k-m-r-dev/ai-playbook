@@ -21,6 +21,8 @@ Behavior:
 Notes:
   - The source repository must store playbooks under <repo>/<platform>.
   - Default mode is symlink.
+  - `.workflow/` is always installed with **copy** mode so session logs stay project-owned.
+    `SESSION_WORKFLOW.md` uses the same **--mode** as other root files (default **symlink**, like `AGENTS.md`).
 EOF
 }
 
@@ -150,7 +152,18 @@ MAPPINGS=(
   ".cursor/rules|.cursor/rules"
   ".github/agents|.github/agents"
   ".github/instructions|.github/instructions"
+  ".workflow|.workflow"
+  "SESSION_WORKFLOW.md|SESSION_WORKFLOW.md"
 )
+
+effective_install_mode() {
+  local source_rel="$1"
+  if [[ "$source_rel" == ".workflow" ]]; then
+    printf '%s' "copy"
+  else
+    printf '%s' "$MODE"
+  fi
+}
 
 for mapping in "${MAPPINGS[@]}"; do
   IFS='|' read -r source_rel dest_rel <<< "$mapping"
@@ -181,13 +194,16 @@ for mapping in "${MAPPINGS[@]}"; do
 
   ensure_parent_dir "$dest_path"
 
-  if [[ "$MODE" == "symlink" ]]; then
+  local install_mode
+  install_mode="$(effective_install_mode "$source_rel")"
+
+  if [[ "$install_mode" == "symlink" ]]; then
     ln -s "$source_path" "$dest_path"
   else
     cp -R "$source_path" "$dest_path"
   fi
 
-  printf '%s\t%s\t%s\n' "$dest_path" "$MODE" "$source_path" >> "$MANIFEST_PATH"
+  printf '%s\t%s\t%s\n' "$dest_path" "$install_mode" "$source_path" >> "$MANIFEST_PATH"
 done
 
 remove_block "$EXCLUDE_FILE" "$BLOCK_BEGIN" "$BLOCK_END"
@@ -202,7 +218,9 @@ append_block \
   "/.claude/skills" \
   "/.cursor/rules" \
   "/.github/agents" \
-  "/.github/instructions"
+  "/.github/instructions" \
+  "/.workflow" \
+  "/SESSION_WORKFLOW.md"
 
 printf 'Installed %s overlay into %s using %s mode.\n' "$PLATFORM" "$CLIENT_REPO" "$MODE"
 printf 'Managed state stored at %s\n' "$MANIFEST_PATH"

@@ -22,6 +22,7 @@ You are a senior Android application developer. Implement the agreed plan with s
 - Avoid unrelated refactors and avoid hidden side effects
 - Follow `native-android-architecture` for feature structure and `native-data-fetching` for API work
 - Apply `security-and-privacy` and `android-platform-quality` when changes affect sensitive data, concurrency, performance, or accessibility
+- Follow `SESSION_WORKFLOW.md` and update `.workflow/*` when work is substantive (see `AGENTS.md`)
 
 ## Quality Gates
 

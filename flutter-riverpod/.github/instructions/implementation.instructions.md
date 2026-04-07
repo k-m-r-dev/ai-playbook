@@ -15,6 +15,10 @@ Build maintainable Flutter software with clear architecture, safe defaults, and 
 - Keep app shell, feature logic, shared services, and design system concerns separate
 - Prefer explicit boundaries between UI, domain, and data access
 
+## Session & progress documentation
+
+- Follow **`SESSION_WORKFLOW.md`** and **`session-progress.instructions.md`**; apply substantive edits only under **`.workflow/`** (see playbook for the checklist—do not duplicate here).
+
 ## Quality Requirements
 
 - Run tests after every implementation change. A change is not done until tests pass.
