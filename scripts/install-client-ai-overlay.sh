@@ -194,7 +194,7 @@ for mapping in "${MAPPINGS[@]}"; do
 
   ensure_parent_dir "$dest_path"
 
-  local install_mode
+  install_mode=""
   install_mode="$(effective_install_mode "$source_rel")"
 
   if [[ "$install_mode" == "symlink" ]]; then
