@@ -138,6 +138,7 @@ These skills are the canonical implementation playbooks for the template. If a t
 | android-platform-quality | `.claude/skills/android-platform-quality/SKILL.md` | Performance, accessibility, concurrency, release quality, and review heuristics |
 | architecture-playbook | `.claude/skills/architecture-playbook/SKILL.md` | Thin routing to `ARCHITECTURE.md` (pairs with root `ARCHITECTURE.md`) |
 | session-progress-workflow | `.claude/skills/session-progress-workflow/SKILL.md` | Session docs, handoff rhythm, `.workflow/*` (pairs with `SESSION_WORKFLOW.md`) |
+| gsd-pi-cursor | `.cursor/skills/gsd-pi-cursor/SKILL.md` | Grill + milestone plan in Cursor via gsd-workflow MCP |
 
 ## Copilot Skill Bridge
 

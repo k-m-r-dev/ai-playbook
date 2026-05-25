@@ -35,6 +35,11 @@
             "source": "local-template/architecture-playbook",
             "sourceType": "local",
             "computedHash": "template-v1-architecture-playbook"
+        },
+        "gsd-pi-cursor": {
+            "source": "local-template/gsd-pi-cursor",
+            "sourceType": "local",
+            "computedHash": "template-v1-gsd-pi-cursor"
         }
     }
 }

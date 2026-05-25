@@ -150,6 +150,7 @@ MAPPINGS=(
   "skills-lock.json|skills-lock.json"
   ".claude/skills|.claude/skills"
   ".cursor/rules|.cursor/rules"
+  ".cursor/skills|.cursor/skills"
   ".github/agents|.github/agents"
   ".github/instructions|.github/instructions"
   ".workflow|.workflow"
@@ -217,6 +218,7 @@ append_block \
   "/skills-lock.json" \
   "/.claude/skills" \
   "/.cursor/rules" \
+  "/.cursor/skills" \
   "/.github/agents" \
   "/.github/instructions" \
   "/.workflow" \
