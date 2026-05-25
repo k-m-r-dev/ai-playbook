@@ -70,7 +70,7 @@ The installer manages these paths inside the client repository root:
 - `skills-lock.json`
 - `.claude/skills`
 - `.cursor/rules`
-- `.cursor/skills` (for example `gsd-pi-cursor`)
+- `.cursor/skills` (for example `gsd-pi-cursor`, `gsd-next-cursor`)
 - `.github/agents`
 - `.github/instructions`
 - `.workflow/` (session progress scratch pad, archive, and tracker)
@@ -137,7 +137,7 @@ Match `--platform`, `--source-repo`, and **`--mode`** to how you ran `install-cl
 
 ## Add `.cursor/skills` to an existing overlay
 
-If a client repo was overlaid **before** `.cursor/skills` existed in the installer mappings (for example **gsd-pi-cursor**), run:
+If a client repo was overlaid **before** `.cursor/skills` existed in the installer mappings (for example **gsd-pi-cursor** / **gsd-next-cursor**), run:
 
 ```bash
 bash scripts/add-cursor-skills-to-overlay.sh \
@@ -147,6 +147,15 @@ bash scripts/add-cursor-skills-to-overlay.sh \
 ```
 
 If you **reinstall** the full overlay and hit `Target already exists … .workflow`, the installer now **keeps** an existing `.workflow/` directory (project session files) instead of failing.
+
+**GSD in Cursor (gsd-pi v3, `.gsd/`):**
+
+| Skill | Use |
+| --- | --- |
+| `gsd-pi-cursor` | Grill → formalize → milestone ROADMAP (discuss/plan) |
+| `gsd-next-cursor` | One unit at a time after ROADMAP exists (plan slice / execute task); pairs with `gsd-pi-cursor` |
+
+Both use **gsd-workflow** MCP and **Cursor** billing — not Codex `$gsd-next` (`.planning/`) or terminal `/gsd next` unless you opt in.
 
 ## Recommended Daily Workflow
 

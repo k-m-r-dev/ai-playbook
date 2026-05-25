@@ -40,6 +40,11 @@
             "source": "local-template/gsd-pi-cursor",
             "sourceType": "local",
             "computedHash": "template-v1-gsd-pi-cursor"
+        },
+        "gsd-next-cursor": {
+            "source": "local-template/gsd-next-cursor",
+            "sourceType": "local",
+            "computedHash": "template-v1-gsd-next-cursor"
         }
     }
 }

@@ -58,3 +58,4 @@ For substantive work, follow that playbook: keep `.workflow/current_session_prog
 | architecture-playbook | `.claude/skills/architecture-playbook/SKILL.md` | Thin routing to `ARCHITECTURE.md` (pairs with root `ARCHITECTURE.md`) |
 | session-progress-workflow | `.claude/skills/session-progress-workflow/SKILL.md` | Session docs, handoff rhythm, `.workflow/*` (pairs with `SESSION_WORKFLOW.md`) |
 | gsd-pi-cursor | `.cursor/skills/gsd-pi-cursor/SKILL.md` | Grill + milestone plan in Cursor via gsd-workflow MCP |
+| gsd-next-cursor | `.cursor/skills/gsd-next-cursor/SKILL.md` | Advance one GSD unit in Cursor (plan slice / execute task) via gsd-workflow MCP; Cursor billing only |

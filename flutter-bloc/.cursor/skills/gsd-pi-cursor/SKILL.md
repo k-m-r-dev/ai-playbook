@@ -28,7 +28,7 @@ This skill ships with the **Flutter BLoC** ai-playbook overlay. Read [platform.m
 2. **Formalize** — `gsd_requirement_save` → `gsd_decision_save` → `gsd_summary_save` (CONTEXT)  
 3. **Plan** — `gsd_plan_milestone` → `M###-ROADMAP.md`  
 4. **Verify** — `.gsd/milestones/M###/` artifacts; update `.workflow/progress_tracker.md`  
-5. **Handoff** (optional) — terminal `gsd` + `/gsd next` or `/gsd auto`
+5. **Handoff** — **`$gsd-next-cursor`** for Cursor-billed step execution; optional: terminal `gsd` + `/gsd auto` only if user wants gsd-pi / Copilot billing
 
 ## Prerequisites
 
