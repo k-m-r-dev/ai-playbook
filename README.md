@@ -70,6 +70,7 @@ The installer manages these paths inside the client repository root:
 - `skills-lock.json`
 - `.claude/skills`
 - `.cursor/rules`
+- `.cursor/skills` (for example `gsd-pi-cursor`)
 - `.github/agents`
 - `.github/instructions`
 - `.workflow/` (session progress scratch pad, archive, and tracker)
@@ -133,6 +134,19 @@ bash scripts/add-session-workflow-to-overlay.sh \
 ```
 
 Match `--platform`, `--source-repo`, and **`--mode`** to how you ran `install-client-ai-overlay.sh`. The script requires an existing overlay manifest under `.git/ai-playbook/`.
+
+## Add `.cursor/skills` to an existing overlay
+
+If a client repo was overlaid **before** `.cursor/skills` existed in the installer mappings (for example **gsd-pi-cursor**), run:
+
+```bash
+bash scripts/add-cursor-skills-to-overlay.sh \
+  --source-repo ~/Workspace/self/ai-playbook \
+  --client-repo ~/Workspace/self/Furqan \
+  --platform flutter-riverpod
+```
+
+If you **reinstall** the full overlay and hit `Target already exists … .workflow`, the installer now **keeps** an existing `.workflow/` directory (project session files) instead of failing.
 
 ## Recommended Daily Workflow
 

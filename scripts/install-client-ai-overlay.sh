@@ -76,6 +76,14 @@ is_managed_symlink() {
   [[ -L "$target" ]] && [[ "$(readlink "$target")" == "$source" ]]
 }
 
+# `.workflow/` is always copied and is project-owned session state. Keep an
+# existing directory when reinstalling after a partial uninstall.
+is_retained_project_workflow() {
+  local dest_rel="$1"
+  local dest_path="$2"
+  [[ "$dest_rel" == ".workflow" ]] && [[ -d "$dest_path" ]]
+}
+
 NAME="ai-playbook"
 MODE="symlink"
 SOURCE_REPO=""
@@ -178,6 +186,9 @@ for mapping in "${MAPPINGS[@]}"; do
   fi
 
   if [[ -e "$dest_path" || -L "$dest_path" ]]; then
+    if is_retained_project_workflow "$dest_rel" "$dest_path"; then
+      continue
+    fi
     die "Target already exists and is not managed by this installer: $dest_rel"
   fi
 done
@@ -192,6 +203,11 @@ for mapping in "${MAPPINGS[@]}"; do
   dest_path="$CLIENT_REPO/$dest_rel"
 
   [[ -e "$source_path" ]] || continue
+
+  if is_retained_project_workflow "$dest_rel" "$dest_path"; then
+    printf '%s\tretain\t%s\n' "$dest_path" "$source_path" >> "$MANIFEST_PATH"
+    continue
+  fi
 
   ensure_parent_dir "$dest_path"
 

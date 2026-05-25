@@ -105,6 +105,10 @@ BLOCK_END="# END ${NAME}:${PLATFORM}"
 while IFS=$'\t' read -r dest_path mode source_path; do
   [[ -n "$dest_path" ]] || continue
 
+  if [[ "$mode" == "retain" ]]; then
+    continue
+  fi
+
   if [[ -L "$dest_path" ]]; then
     if [[ "$(readlink "$dest_path")" == "$source_path" ]]; then
       rm "$dest_path"
