@@ -16,6 +16,7 @@ Behavior:
   - Installs AI overlay files into a local client checkout only.
   - Stores install state under the client repository's .git directory.
   - Adds managed paths to .git/info/exclude.
+  - Appends managed blocks to the client .gitignore (runtime artifacts + overlay paths).
   - Refuses to overwrite existing unmanaged files or directories.
 
 Notes:
@@ -28,6 +29,8 @@ Notes:
   - universal also installs `.github/copilot-instructions.md` (skipped if absent on other platforms).
 EOF
 }
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 die() {
   printf 'Error: %s\n' "$1" >&2
@@ -247,5 +250,13 @@ append_block \
   "/.workflow" \
   "/SESSION_WORKFLOW.md"
 
+# shellcheck source=lib/overlay-gitignore.sh
+source "$SCRIPT_DIR/lib/overlay-gitignore.sh"
+
+overlay_gitignore_apply_artifacts "$CLIENT_REPO" "$NAME" "$SOURCE_REPO" \
+  || die "Missing config/client-ai-gitignore-artifacts.txt in source repo"
+overlay_gitignore_apply_platform "$CLIENT_REPO" "$NAME" "$PLATFORM"
+
 printf 'Installed %s overlay into %s using %s mode.\n' "$PLATFORM" "$CLIENT_REPO" "$MODE"
 printf 'Managed state stored at %s\n' "$MANIFEST_PATH"
+printf 'Updated %s/.gitignore (local-artifacts + overlay:%s blocks)\n' "$CLIENT_REPO" "$PLATFORM"

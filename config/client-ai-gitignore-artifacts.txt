@@ -1,0 +1,13 @@
+# Local-first AI runtime artifacts (do not commit)
+graphify-out/
+.ruflo/
+.claude/agents/
+.claude/commands/
+.claude/hooks/
+.claude/memory.db
+.claude-flow/
+.claude/settings.local.json
+.mcp.local.json
+.swarm/
+data/memory/
+ruvector.db

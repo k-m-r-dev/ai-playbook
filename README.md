@@ -229,8 +229,10 @@ This copies `aitools/ios`, `android`, and Flutter variants. **`universal`** is m
 
 - Files install only into the local client checkout
 - State under `.git/ai-playbook/<platform>.manifest.tsv`
-- Managed paths in `.git/info/exclude` (not shared `.gitignore`)
+- Managed paths in `.git/info/exclude` (local, not committed)
+- Managed blocks in the client **`.gitignore`** (committed — team-wide): runtime artifacts from `config/client-ai-gitignore-artifacts.txt` plus overlay paths per platform
 - Installer refuses to overwrite unmanaged existing paths
+- Already-installed clients: `scripts/patch-client-ai-gitignore.sh`
 
 ## GSD in Cursor
 
@@ -249,6 +251,7 @@ Requires **gsd-workflow** MCP. Uses Cursor billing — not terminal `/gsd` unles
 - Missing `.cursor/skills`: `scripts/add-cursor-skills-to-overlay.sh`
 - Missing hook safety helpers in existing overlay: `scripts/patch-hook-safety-overlay.sh`
 - After `ruflo init` overwrote client hooks: `scripts/repair-after-ruflo.sh`
+- Client missing AI `.gitignore` blocks: `scripts/patch-client-ai-gitignore.sh`
 
 ## Uninstall
 

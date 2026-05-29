@@ -90,7 +90,7 @@ Add a subsection under **Tool setup** with install steps and limitations.
 
 If a change affects runtime safety (hooks, command dispatch, session lifecycle):
 
-- add a patch script for already-installed overlays in `scripts/` (manifest-aware); after `ruflo init` in a client repo, `repair-after-ruflo.sh` re-applies helpers with **symlink** mode,
+- add a patch script for already-installed overlays in `scripts/` (manifest-aware); after `ruflo init` in a client repo, `repair-after-ruflo.sh` re-applies helpers with **symlink** mode; `patch-client-ai-gitignore.sh` refreshes committed `.gitignore` blocks from `config/client-ai-gitignore-artifacts.txt`,
 - add a verification script (drift check + behavior check),
 - run verification locally before shipping:
 

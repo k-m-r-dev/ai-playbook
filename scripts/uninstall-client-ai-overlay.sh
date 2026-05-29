@@ -13,9 +13,12 @@ Usage:
 Behavior:
   - Removes only files previously installed by the matching installer.
   - Removes the managed block from .git/info/exclude.
+  - Removes managed .gitignore blocks for this platform (and local-artifacts if no overlays remain).
   - Leaves unrelated client files untouched.
 EOF
 }
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 die() {
   printf 'Error: %s\n' "$1" >&2
@@ -124,7 +127,14 @@ if [[ -f "$EXCLUDE_FILE" ]]; then
   remove_block "$EXCLUDE_FILE" "$BLOCK_BEGIN" "$BLOCK_END"
 fi
 
+# shellcheck source=lib/overlay-gitignore.sh
+source "$SCRIPT_DIR/lib/overlay-gitignore.sh"
+
+overlay_gitignore_remove_platform "$CLIENT_REPO" "$NAME" "$PLATFORM"
+
 rm -f "$MANIFEST_PATH"
+
+overlay_gitignore_remove_artifacts_if_unused "$CLIENT_REPO" "$NAME" "$GIT_DIR"
 rmdir "$STATE_DIR" 2>/dev/null || true
 
 printf 'Removed %s overlay from %s\n' "$PLATFORM" "$CLIENT_REPO"
