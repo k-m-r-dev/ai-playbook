@@ -1,172 +1,265 @@
-# AI Playbooks Repository Template
+# AI Playbook — local-first multi-tool template
 
-This folder is a starter layout for storing AI playbooks in your own private Git repository, for example a personal GitHub repository named `ai-playbook`, and installing them into client projects without committing them to the client repository.
+Private repository template for installing a **unified AI engineering overlay** into client projects without committing playbook files to client git history.
 
-## Recommended Repository Layout
+Supports **VS Code Copilot**, **Cursor**, and **Claude Code CLI**, with optional **GSD-Pi** (`@opengsd/gsd-pi`), **graphify** (AST knowledge graph), and **ruflo** (local HNSW memory). See **[FRAMEWORK.md](FRAMEWORK.md)** for the full architecture and daily loop.
+
+## Repository layout
 
 ```text
 ai-playbook/
-  ios/
-  android/
-  flutter-riverpod/
-  flutter-bloc/
-  scripts/
-    bootstrap-playbooks-from-aitools.sh
-    install-client-ai-overlay.sh
-    uninstall-client-ai-overlay.sh
+  universal/              # Default — backend, frontend, desktop, infra, CI/CD
+  ios/ android/           # Native mobile depth
+  flutter-riverpod/       # Flutter + Riverpod
+  flutter-bloc/           # Flutter + Bloc
+  scripts/                # Install / uninstall / bootstrap
+  config/                 # MCP + Claude hook templates
+  FRAMEWORK.md            # Unified framework guide
+  EXTENDING.md            # Add new AI tools
 ```
 
-## What Goes In The Platform Folders
+## Choose a platform
 
-- `ios/`: copy the contents of `aitools/ios/`
-- `android/`: copy the contents of `aitools/android/`
-- `flutter-riverpod/`: copy the contents of `aitools/flutter-riverpod/`
-- `flutter-bloc/`: copy the contents of `aitools/flutter-bloc/`
+| Your project | `--platform` |
+|--------------|--------------|
+| Anything except dedicated mobile templates | **`universal`** |
+| Native iOS | `ios` |
+| Native Android | `android` |
+| Flutter (Riverpod) | `flutter-riverpod` |
+| Flutter (Bloc) | `flutter-bloc` |
 
-## Bootstrap Example
+Start with **`universal`** for new services, web apps, libraries, and pipelines. Use mobile folders when you need stack-specific `ARCHITECTURE.md` and skills.
 
-If you already have a repository that contains `aitools/ios`, `aitools/android`, and optional Flutter variants (`aitools/flutter-riverpod`, `aitools/flutter-bloc`), you can populate this repository template automatically:
-
-1. Create or clone your private `ai-playbook` repository.
-2. Copy the `scripts/` folder from this template into that repository.
-3. Run the bootstrap script from this repository, pointing `--source-repo` at the repo that contains `aitools/` and `--dest-repo` at your private `ai-playbook` repo.
-4. Review the generated platform folders in your private repo, then commit and push them.
+## Install into a client repo
 
 ```bash
-# example: seed ~/private/ai-playbook from this repository
+bash scripts/install-client-ai-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-api \
+  --platform universal \
+  --mode symlink
+```
+
+Confirm `git status` in the client repo shows **no** staged AI overlay files (paths are in `.git/info/exclude`).
+
+### Installed paths
+
+- `AGENTS.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `SESSION_WORKFLOW.md`
+- `.claude/helpers`, `.claude/skills`, `.cursor/rules`, `.cursor/skills`
+- `.github/agents`, `.github/instructions`, `.github/copilot-instructions.md` (universal)
+- `.workflow/` (always **copied** — project-owned session state)
+
+## Scripts guide (when to use what)
+
+These scripts are for **installing and maintaining overlays in local client repos** (the playbook stays out of the client’s git history).
+
+### `scripts/install-client-ai-overlay.sh`
+
+- **Use when**: first-time install of the overlay into a client repo.
+- **Does**: copies/symlinks overlay files into the client repo, writes a manifest to `.git/ai-playbook/<platform>.manifest.tsv`, and adds paths to `.git/info/exclude`.
+- **Default mode**: `symlink` (recommended). `.workflow/` is always copied.
+
+**Example (generic repo — recommended):**
+
+```bash
+bash scripts/install-client-ai-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-service \
+  --platform universal \
+  --mode symlink
+```
+
+**Example (tool can’t follow symlinks):**
+
+```bash
+bash scripts/install-client-ai-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-service \
+  --platform universal \
+  --mode copy
+```
+
+**Example (mobile-specific overlay):**
+
+```bash
+bash scripts/install-client-ai-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-ios-app \
+  --platform ios \
+  --mode symlink
+```
+
+### `scripts/uninstall-client-ai-overlay.sh`
+
+- **Use when**: you want to remove an overlay from a client repo (cleanup, reinstall, or switch platforms).
+- **Does**: removes only paths listed in the manifest; removes the exclude block; leaves unrelated files alone.
+
+**Example:**
+
+```bash
+bash scripts/uninstall-client-ai-overlay.sh \
+  --client-repo ~/projects/my-service \
+  --platform universal
+```
+
+### `scripts/add-session-workflow-to-overlay.sh`
+
+- **Use when**: the client repo already has an overlay, but `SESSION_WORKFLOW.md` is missing (older installs).
+- **Does**: installs `SESSION_WORKFLOW.md` and appends it to the manifest and exclude block.
+- **Important**: `--mode` must match how you installed the overlay (usually `symlink`).
+
+**Example:**
+
+```bash
+bash scripts/add-session-workflow-to-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-service \
+  --platform universal
+```
+
+### `scripts/add-cursor-skills-to-overlay.sh`
+
+- **Use when**: the client repo already has an overlay, but `.cursor/skills` is missing (older installs).
+- **Does**: installs `.cursor/skills` and appends it to the manifest and exclude block.
+
+**Example:**
+
+```bash
+bash scripts/add-cursor-skills-to-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-service \
+  --platform universal
+```
+
+### `scripts/add-copilot-instructions-to-overlay.sh`
+
+- **Use when**: the client repo already has an overlay, but `.github/copilot-instructions.md` is missing (older installs).
+- **Does**: installs `.github/copilot-instructions.md` (only if present in the source platform) and appends it to the manifest and exclude block.
+
+**Example (universal):**
+
+```bash
+bash scripts/add-copilot-instructions-to-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-service \
+  --platform universal
+```
+
+### `scripts/patch-hook-safety-overlay.sh`
+
+- **Use when**: existing client overlays were installed before hook-safety hardening and are missing `.claude/helpers/hook-handler.cjs`.
+- **Does**: patches the installed overlay manifest and exclude block, then installs/updates `.claude/helpers` in the client repo.
+- **Mode**: inherits install mode from manifest unless `--mode` is provided.
+
+**Example:**
+
+```bash
+bash scripts/patch-hook-safety-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-service \
+  --platform universal
+```
+
+**After `ruflo init --start-all` overwrites hook handler** — use `repair-after-ruflo.sh` (symlink restore + hardened handler; all installed platforms by default):
+
+```bash
+bash scripts/repair-after-ruflo.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-service
+```
+
+Single platform: add `--platform universal`. Lower-level control: `patch-hook-safety-overlay.sh` (optional `--mode`).
+
+### `scripts/verify-hook-safety.sh`
+
+- **Use when**: validating hook safety before release or after template changes.
+- **Does**:
+  - checks `hook-handler.cjs` drift across platform templates,
+  - validates hook decision JSON contract,
+  - verifies timeout path remains fail-open.
+
+**Example:**
+
+```bash
+bash scripts/verify-hook-safety.sh
+```
+
+### `scripts/bootstrap-playbooks-from-aitools.sh` (legacy seed)
+
+- **Use when**: you have an existing repo with `aitools/<platform>` and want to seed/update your private `ai-playbook` repo.
+- **Does**: copies `aitools/<platform>` → `<dest-repo>/<platform>`.
+- **Note**: `universal/` is maintained in this repo directly and is **not** bootstrapped from `aitools/`.
+
+**Example (seed mobile playbooks only):**
+
+```bash
+bash scripts/bootstrap-playbooks-from-aitools.sh \
+  --source-repo ~/workspace/repo-with-aitools \
+  --dest-repo ~/private/ai-playbook \
+  --platform all
+```
+
+## After install (client project)
+
+1. Fill in **`CLAUDE.md`** (stack, topography, milestone, learnings).
+2. Customize **`ARCHITECTURE.md`** for the real module map.
+3. Set build/test commands in **`AGENTS.md`**.
+4. Optional local engines:
+
+```bash
+npx ruflo@latest init --wizard
+claude mcp add ruflo -- npx -y ruflo@latest mcp start
+uv tool install graphifyy && graphify build   # or: pip install graphifyy
+```
+
+Copy templates from `config/` — see **FRAMEWORK.md**.
+
+## Bootstrap from `aitools/` (legacy mobile seed)
+
+```bash
 bash scripts/bootstrap-playbooks-from-aitools.sh \
   --source-repo ~/workspace/template-source \
   --dest-repo ~/private/ai-playbook \
   --platform all
 ```
 
-Use `--force` only when you intentionally want to replace existing playbook contents.
+This copies `aitools/ios`, `android`, and Flutter variants. **`universal`** is maintained in this repo directly (not bootstrapped from `aitools/`).
 
-The bootstrap script copies:
+## Safety model
 
-- `aitools/ios` into `ai-playbook/ios`
-- `aitools/android` into `ai-playbook/android`
-- `aitools/flutter-riverpod` into `ai-playbook/flutter-riverpod`
-- `aitools/flutter-bloc` into `ai-playbook/flutter-bloc`
+- Files install only into the local client checkout
+- State under `.git/ai-playbook/<platform>.manifest.tsv`
+- Managed paths in `.git/info/exclude` (not shared `.gitignore`)
+- Installer refuses to overwrite unmanaged existing paths
 
-Each platform folder in this template includes **session workflow** assets—root `.workflow/` (three markdown files) and `SESSION_WORKFLOW.md` at the same level as `AGENTS.md`—so bootstrapping from `aitools/` should carry the same layout into your private playbook. When you refresh from a source repo, ensure `aitools/<platform>` also contains those paths if you want them updated.
+## GSD in Cursor
 
-It is meant for initializing or refreshing your private playbook repository, not for installing files into a client project. For client projects, use `install-client-ai-overlay.sh` instead.
+| Skill | Use |
+|-------|-----|
+| `gsd-pi-cursor` | Grill → milestone ROADMAP |
+| `gsd-next-cursor` | One plan/execute unit at a time |
 
-## Safety Model
+Requires **gsd-workflow** MCP. Uses Cursor billing — not terminal `/gsd` unless you opt in.
 
-- Files are installed only into the local client checkout
-- Managed state is stored in the client repository's `.git` directory
-- Managed paths are added to `.git/info/exclude`, not the shared `.gitignore`
-- The installer aborts if a target path already exists and is not already managed by the installer
+## Add tools or patch existing overlays
 
-## Installed Paths
+- New AI IDE / CLI: **[EXTENDING.md](EXTENDING.md)**
+- Missing `SESSION_WORKFLOW.md`: `scripts/add-session-workflow-to-overlay.sh`
+- Missing `.github/copilot-instructions.md`: `scripts/add-copilot-instructions-to-overlay.sh`
+- Missing `.cursor/skills`: `scripts/add-cursor-skills-to-overlay.sh`
+- Missing hook safety helpers in existing overlay: `scripts/patch-hook-safety-overlay.sh`
+- After `ruflo init` overwrote client hooks: `scripts/repair-after-ruflo.sh`
 
-The installer manages these paths inside the client repository root:
-
-- `AGENTS.md`
-- `CLAUDE.md`
-- `ARCHITECTURE.md`
-- `skills-lock.json`
-- `.claude/skills`
-- `.cursor/rules`
-- `.cursor/skills` (for example `gsd-pi-cursor`, `gsd-next-cursor`)
-- `.github/agents`
-- `.github/instructions`
-- `.workflow/` (session progress scratch pad, archive, and tracker)
-- `SESSION_WORKFLOW.md` (playbook for maintaining those files; repository root)
-
-That layout avoids replacing the entire `.github/`, `.claude/`, or `.cursor/` directories and reduces the risk of clobbering client-owned files.
-
-**Session workflow install mode:** `.workflow/` is **always copied** so session logs and trackers stay real files in the client checkout. **`SESSION_WORKFLOW.md` follows `--mode`** like `AGENTS.md`, `CLAUDE.md`, and `ARCHITECTURE.md` (default symlink to your private `ai-playbook`). Use **`--mode copy`** for the whole overlay when a tool does not follow symlinks.
-
-**Architecture routing (Cursor / Claude / Copilot):** `.cursor/rules/15-architecture.mdc`, the **`architecture-playbook`** Claude skill, and **`architecture.instructions.md`** under **`.github/instructions/`** share the **same body** as the session trio does for `SESSION_WORKFLOW.md`—thin pointers only; the real content stays in root **`ARCHITECTURE.md`**.
-
-**Flutter Copilot baseline:** In **`flutter-riverpod`** and **`flutter-bloc`**, **`.github/instructions/implementation.instructions.md`** is the generic implementation template (codegen, feature layout, state management, repositories, pitfalls). Per-client facts (asset DB paths, `tools/` scripts, domain notes) belong in **`doc/copilot-project-appendix.md`** in the client repo—use the playbook’s **`doc/copilot-project-appendix.md`** as a starter; it is **not** installed by **`install-client-ai-overlay.sh`** (copy it if you want that layout).
-
-## Install Example
-
-```bash
-bash scripts/install-client-ai-overlay.sh \
-  --source-repo ~/private/ai-playbook \
-  --client-repo ~/clients/acme-ios-app \
-  --platform ios \
-  --mode symlink
-```
-
-## Uninstall Example
+## Uninstall
 
 ```bash
 bash scripts/uninstall-client-ai-overlay.sh \
-  --client-repo ~/clients/acme-ios-app \
-  --platform ios
+  --client-repo ~/projects/my-api \
+  --platform universal
 ```
 
-Flutter example:
+## Ownership & privacy
 
-```bash
-bash scripts/install-client-ai-overlay.sh \
-  --source-repo ~/private/ai-playbook \
-  --client-repo ~/clients/acme-flutter-app \
-  --platform flutter-riverpod \
-  --mode symlink
-```
-
-## Add `SESSION_WORKFLOW.md` to an existing overlay
-
-If a client repo was overlaid **before** `SESSION_WORKFLOW.md` existed in the installer mappings, the playbook file will be missing at the repo root even though `AGENTS.md` / `.cursor/rules` / etc. are present. Run:
-
-```bash
-bash scripts/add-session-workflow-to-overlay.sh \
-  --source-repo ~/private/ai-playbook \
-  --client-repo ~/Workspace/self/Furqan \
-  --platform flutter-riverpod
-```
-
-If that client overlay was installed with **`--mode copy`**, pass the same mode:
-
-```bash
-bash scripts/add-session-workflow-to-overlay.sh \
-  --source-repo ~/private/ai-playbook \
-  --client-repo ~/Workspace/self/Furqan \
-  --platform flutter-riverpod \
-  --mode copy
-```
-
-Match `--platform`, `--source-repo`, and **`--mode`** to how you ran `install-client-ai-overlay.sh`. The script requires an existing overlay manifest under `.git/ai-playbook/`.
-
-## Add `.cursor/skills` to an existing overlay
-
-If a client repo was overlaid **before** `.cursor/skills` existed in the installer mappings (for example **gsd-pi-cursor** / **gsd-next-cursor**), run:
-
-```bash
-bash scripts/add-cursor-skills-to-overlay.sh \
-  --source-repo ~/Workspace/self/ai-playbook \
-  --client-repo ~/Workspace/self/Furqan \
-  --platform flutter-riverpod
-```
-
-If you **reinstall** the full overlay and hit `Target already exists … .workflow`, the installer now **keeps** an existing `.workflow/` directory (project session files) instead of failing.
-
-**GSD in Cursor (gsd-pi v3, `.gsd/`):**
-
-| Skill | Use |
-| --- | --- |
-| `gsd-pi-cursor` | Grill → formalize → milestone ROADMAP (discuss/plan) |
-| `gsd-next-cursor` | One unit at a time after ROADMAP exists (plan slice / execute task); pairs with `gsd-pi-cursor` |
-
-Both use **gsd-workflow** MCP and **Cursor** billing — not Codex `$gsd-next` (`.planning/`) or terminal `/gsd next` unless you opt in.
-
-## Recommended Daily Workflow
-
-1. Keep the source of truth in your own private repository, for example `ai-playbook`.
-2. Use `bootstrap-playbooks-from-aitools.sh` once to seed the platform folders you need (`ios`, `android`, `flutter-riverpod`, `flutter-bloc`) from a repository that already contains `aitools/`.
-3. Install the overlay into the client repository locally using `symlink` mode.
-4. Confirm `git status` in the client repository shows no staged or tracked AI overlay files.
-5. Use `copy` mode only if a specific tool does not follow symlinks correctly.
-
-## Ownership Protection Notes
-
-- This keeps your playbooks out of the client's Git history.
-- It does not automatically keep the content out of AI vendor backends if the tool reads those files from the workspace.
-- If you need both Git privacy and model-processing restrictions, configure the AI tools with the correct enterprise privacy settings too.
+- Playbooks stay out of client git history via exclude rules
+- Cloud AI vendors may still read workspace files — configure enterprise privacy separately
+- Local graphs (graphify) and vectors (ruflo) remain on disk under `graphify-out/` and `.ruflo/`

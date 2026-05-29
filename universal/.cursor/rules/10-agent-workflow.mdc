@@ -1,0 +1,14 @@
+---
+description: Agent workflow — small diffs, explicit boundaries, verify before done
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Agent workflow
+
+- Inspect existing patterns before adding new abstractions.
+- Prefer small, reviewable diffs over broad rewrites.
+- Flag ambiguous requirements instead of guessing on security or data handling.
+- Run verification commands from `AGENTS.md` before claiming work is complete.
+- At session end, offer a 3-bullet summary for **`CLAUDE.md`** if architecture or conventions changed.

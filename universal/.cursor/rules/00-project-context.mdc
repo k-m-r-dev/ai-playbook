@@ -1,0 +1,15 @@
+---
+description: Universal repository context — read CLAUDE.md and ARCHITECTURE.md first
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Project context
+
+- Read **`CLAUDE.md`** at session start (stack, graph hubs, milestone, learnings).
+- Read **`ARCHITECTURE.md`** before non-trivial features, refactors, or new modules.
+- Run project **build and test** commands from `AGENTS.md` after code changes.
+- Prefer **graphify** (`graphify-out/`, graph MCP) over whole-repo text search.
+- Do not hardcode secrets; validate external input at boundaries.
+- Match existing naming, layout, and patterns in the codebase.

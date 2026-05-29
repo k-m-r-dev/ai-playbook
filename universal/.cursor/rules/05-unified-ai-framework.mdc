@@ -1,0 +1,30 @@
+---
+description: Local-first token budget — graphify, ruflo, GSD; no blind repo sweeps
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Unified AI framework (local-first)
+
+## Context awareness
+
+- Before complex work, read **`CLAUDE.md`** (ledger) and **`ARCHITECTURE.md`** (structure).
+- Use **`graphify-out/GRAPH_REPORT.md`** and graph MCP tools for navigation — not recursive reads of every source file.
+
+## Token budget
+
+- Do **not** run wide repository grep/list unless graph tools cannot answer the question.
+- Prefer targeted file reads on paths listed under **Active System Topography** in `CLAUDE.md`.
+- For cross-cutting symbols, query the knowledge graph first.
+
+## Cross-session continuation
+
+- Session scratch: **`.workflow/`** per `SESSION_WORKFLOW.md`.
+- Durable learnings: **`CLAUDE.md`** Cross-Session Learnings + ruflo consolidate.
+- After major structural changes, suggest `graphify build` and update topography bullets in `CLAUDE.md`.
+
+## Milestones (when GSD is enabled)
+
+- Cursor: skills `gsd-pi-cursor`, `gsd-next-cursor` + gsd-workflow MCP.
+- Keep milestone state in `.gsd/` or `.planning/` consistently — do not duplicate in chat.

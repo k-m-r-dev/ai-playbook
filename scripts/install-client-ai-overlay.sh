@@ -8,7 +8,7 @@ Usage:
   install-client-ai-overlay.sh \
     --source-repo /path/to/ai-playbook \
     --client-repo /path/to/client-repo \
-    --platform ios|android|flutter-riverpod|flutter-bloc \
+    --platform universal|ios|android|flutter-riverpod|flutter-bloc \
     [--mode symlink|copy] \
     [--name ai-playbook]
 
@@ -20,9 +20,12 @@ Behavior:
 
 Notes:
   - The source repository must store playbooks under <repo>/<platform>.
+  - Use **--platform universal** for backend, frontend, desktop, infra, or generic repos.
+  - Use ios|android|flutter-* for native/mobile-specific playbooks.
   - Default mode is symlink.
   - `.workflow/` is always installed with **copy** mode so session logs stay project-owned.
     `SESSION_WORKFLOW.md` uses the same **--mode** as other root files (default **symlink**, like `AGENTS.md`).
+  - universal also installs `.github/copilot-instructions.md` (skipped if absent on other platforms).
 EOF
 }
 
@@ -124,7 +127,7 @@ done
 
 [[ -n "$SOURCE_REPO" ]] || die "--source-repo is required"
 [[ -n "$CLIENT_REPO" ]] || die "--client-repo is required"
-[[ "$PLATFORM" == "ios" || "$PLATFORM" == "android" || "$PLATFORM" == "flutter-riverpod" || "$PLATFORM" == "flutter-bloc" ]] || die "--platform must be ios, android, flutter-riverpod, or flutter-bloc"
+[[ "$PLATFORM" == "universal" || "$PLATFORM" == "ios" || "$PLATFORM" == "android" || "$PLATFORM" == "flutter-riverpod" || "$PLATFORM" == "flutter-bloc" ]] || die "--platform must be universal, ios, android, flutter-riverpod, or flutter-bloc"
 [[ "$MODE" == "symlink" || "$MODE" == "copy" ]] || die "--mode must be symlink or copy"
 
 [[ -d "$SOURCE_REPO" ]] || die "Source repository does not exist: $SOURCE_REPO"
@@ -156,11 +159,13 @@ MAPPINGS=(
   "CLAUDE.md|CLAUDE.md"
   "ARCHITECTURE.md|ARCHITECTURE.md"
   "skills-lock.json|skills-lock.json"
+  ".claude/helpers|.claude/helpers"
   ".claude/skills|.claude/skills"
   ".cursor/rules|.cursor/rules"
   ".cursor/skills|.cursor/skills"
   ".github/agents|.github/agents"
   ".github/instructions|.github/instructions"
+  ".github/copilot-instructions.md|.github/copilot-instructions.md"
   ".workflow|.workflow"
   "SESSION_WORKFLOW.md|SESSION_WORKFLOW.md"
 )
@@ -232,11 +237,13 @@ append_block \
   "/CLAUDE.md" \
   "/ARCHITECTURE.md" \
   "/skills-lock.json" \
+  "/.claude/helpers" \
   "/.claude/skills" \
   "/.cursor/rules" \
   "/.cursor/skills" \
   "/.github/agents" \
   "/.github/instructions" \
+  "/.github/copilot-instructions.md" \
   "/.workflow" \
   "/SESSION_WORKFLOW.md"
 

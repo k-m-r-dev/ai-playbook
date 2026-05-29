@@ -17,6 +17,9 @@ Behavior:
   - Preserves dot-directories like .claude, .cursor, .github, and .workflow.
   - Each platform template should include `SESSION_WORKFLOW.md` and `.workflow/` (session
     progress files); clients install copies of those paths via install-client-ai-overlay.sh.
+  - The `universal/` playbook is NOT bootstrapped from aitools — it lives in ai-playbook
+    directly. Use install-client-ai-overlay.sh --platform universal for client projects.
+  - `--platform all` copies only: ios, android, flutter-riverpod, flutter-bloc.
 
 Examples:
   bash scripts/bootstrap-playbooks-from-aitools.sh \
@@ -96,7 +99,8 @@ done
 
 [[ -n "$SOURCE_REPO" ]] || die "--source-repo is required"
 [[ -n "$DEST_REPO" ]] || die "--dest-repo is required"
-[[ "$PLATFORM" == "ios" || "$PLATFORM" == "android" || "$PLATFORM" == "flutter-riverpod" || "$PLATFORM" == "flutter-bloc" || "$PLATFORM" == "all" ]] || die "--platform must be ios, android, flutter-riverpod, flutter-bloc, or all"
+[[ "$PLATFORM" == "ios" || "$PLATFORM" == "android" || "$PLATFORM" == "flutter-riverpod" || "$PLATFORM" == "flutter-bloc" || "$PLATFORM" == "all" ]] || die "--platform must be ios, android, flutter-riverpod, flutter-bloc, or all (not universal — see usage)"
+[[ "$PLATFORM" != "universal" ]] || die "universal/ is maintained in ai-playbook itself, not copied from aitools/. Use install-client-ai-overlay.sh --platform universal on client repos."
 
 [[ -d "$SOURCE_REPO" ]] || die "Source repository does not exist: $SOURCE_REPO"
 [[ -d "$DEST_REPO" ]] || die "Destination repository does not exist: $DEST_REPO"

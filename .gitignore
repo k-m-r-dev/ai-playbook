@@ -1,4 +1,19 @@
 *.code-workspace
+
+# Local-first AI artifacts (client projects should gitignore these too)
+graphify-out/
+.ruflo/
+.claude/agents/
+.claude/commands/
+.claude/helpers/
+.claude/hooks/
+.claude-flow/
+.claude/settings.local.json
+.mcp.local.json
+.swarm/
+
+# Playbook meta
+test.md
 flutter-riverpod/.claude/skills/alarmkit
 flutter-riverpod/.claude/skills/app-clips
 flutter-riverpod/.claude/skills/app-intents

@@ -1,0 +1,39 @@
+{
+  "comment": "Merge into .claude/settings.local.json (gitignore this file in client repos)",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "graphify check-update --silent",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx ruflo@latest memory synch-ledger --file CLAUDE.md",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx ruflo@latest memory consolidate --target local",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
