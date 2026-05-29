@@ -7,13 +7,15 @@ graphify-out/
 .claude/commands/
 .claude/helpers/
 .claude/hooks/
+.claude/memory.db
 .claude-flow/
 .claude/settings.local.json
 .mcp.local.json
 .swarm/
+data/memory/
+ruvector.db
 
 # Playbook meta
-test.md
 flutter-riverpod/.claude/skills/alarmkit
 flutter-riverpod/.claude/skills/app-clips
 flutter-riverpod/.claude/skills/app-intents
