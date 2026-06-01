@@ -1,61 +1,26 @@
-# Flutter Riverpod AI Development Template
+@_AGENTS.md
 
-Generic AI-first template for Flutter projects using Dart, Riverpod state management, and GetIt/Injectable dependency injection.
+## Learned User Preferences
 
-## Purpose
+- Use GSD Pi in Cursor (`gsd-pi-cursor` to discuss/formalize, `gsd-next-cursor` for step execution) so planning and implementation bill the Cursor model—not the terminal `/gsd next` TUI or Copilot-only flows.
+- Extend overlay skills and shared playbook files via the `ai-playbook` installer project, not ad-hoc copies only in this repo.
+- Do not create git commits unless explicitly asked; when asked, draft commit messages and PR titles/descriptions in the repo's existing style.
+- Ship Library and related UI in light mode only (dark mode was dropped per client request).
+- Treat environments as dev and prod only for now; keep room to add more flavors later without assuming staging exists today.
+- Prefer human-readable doc names under `doc/` (for example `APP-INTEGRATION.md`) over bare milestone codes (for example `M006-CONTRACT.md`).
+- For Ruflo on Cursor: neutralize broken ruflo-core PreToolUse in `~/.cursor/plugins/cache/ruflo/ruflo-core` (not `~/.cursor/hooks/`); wire project hooks via `.cursor/hooks.json` and `.cursor/hooks/` adapter to `.claude/helpers/hook-handler.cjs`; re-neutralize after ruflo-core plugin updates.
 
-Provide durable, high-signal context so coding agents can plan, implement, and review Flutter Riverpod changes consistently.
+## Learned Workspace Facts
 
-## Architecture Document
-
-The project's concrete architecture decisions live in `ARCHITECTURE.md`.
-
-- Read `ARCHITECTURE.md` before planning or implementing any feature, refactor, or structural change.
-- If a general principle in this file conflicts with a specific decision in `ARCHITECTURE.md`, the architecture document takes precedence.
-- **Cursor** (`.cursor/rules/15-architecture.mdc`), **Claude** (`architecture-playbook` skill), and **Copilot** (`architecture.instructions.md`) share the **same routing body** for reading **`ARCHITECTURE.md`** first; only metadata differs (`globs` / skill frontmatter / `applyTo`). **Claude** also loads it via **`CLAUDE.md`** (`@ARCHITECTURE.md`). Do not duplicate layer or module rules in those three—only in **`ARCHITECTURE.md`**.
-
-## Commands
-
-Run from the Flutter app root:
-
-```bash
-flutter pub get
-flutter analyze
-flutter test
-flutter test --coverage
-flutter build apk --debug
-flutter build ios --debug --no-codesign
-```
-
-## Riverpod Conventions
-
-- App root must be wrapped by `ProviderScope`
-- Use `ref.watch` for reactive reads and `ref.read` for command actions
-- Keep provider declarations close to feature ownership
-- Prefer `AsyncValue` for loading/error/data state modeling
-
-## Agent Workflow
-
-- `@Planner`: produce a concrete plan with risks and test surfaces
-- `@Coder`: implement small, reviewable changes
-- `@Reviewer`: verify correctness, architecture fit, security, and test coverage
-
-## Session & progress docs
-
-Canonical playbook: **`SESSION_WORKFLOW.md`** (full process + templates). **Cursor** (`.cursor/rules/20-session-progress.mdc`), **Claude** (`session-progress-workflow` skill), and **Copilot** (`session-progress.instructions.md`) share the **same routing body**; only metadata differs (`globs` / skill frontmatter / `applyTo`). **Claude** also loads playbooks via **`CLAUDE.md`** (`@ARCHITECTURE.md`, `@SESSION_WORKFLOW.md`). Do not duplicate lifecycle or templates in those three—only in **`SESSION_WORKFLOW.md`** (`ai-playbook`).
-
-For substantive work, follow that playbook: keep `.workflow/current_session_progress.md` updated during the session, archive to `.workflow/previous_session_progress.md` at handoff, and align `.workflow/progress_tracker.md` when tasks or schema change. **`.workflow/` is always copied** at overlay install (project-owned state). **`SESSION_WORKFLOW.md` uses the installer `--mode`** (typically **symlink** next to `AGENTS.md`); use **`--mode copy`** if your environment cannot resolve symlinks.
-
-## Skills
-
-| Skill | Path | Purpose |
-| --- | --- | --- |
-| flutter-architecture | `.claude/skills/flutter-architecture/SKILL.md` | High-level repository layout and dependency direction |
-| flutter-riverpod-architecture | `.claude/skills/flutter-riverpod-architecture/SKILL.md` | Riverpod-specific feature and state ownership patterns |
-| native-data-fetching | `.claude/skills/native-data-fetching/SKILL.md` | Networking, retries, caching, and error handling |
-| security-and-privacy | `.claude/skills/security-and-privacy/SKILL.md` | Secrets, sensitive data, validation, and storage safety |
-| flutter-platform-quality | `.claude/skills/flutter-platform-quality/SKILL.md` | Performance, accessibility, concurrency, and release quality |
-| architecture-playbook | `.claude/skills/architecture-playbook/SKILL.md` | Thin routing to `ARCHITECTURE.md` (pairs with root `ARCHITECTURE.md`) |
-| session-progress-workflow | `.claude/skills/session-progress-workflow/SKILL.md` | Session docs, handoff rhythm, `.workflow/*` (pairs with `SESSION_WORKFLOW.md`) |
-| gsd-pi-cursor | `.cursor/skills/gsd-pi-cursor/SKILL.md` | Grill + milestone plan in Cursor via gsd-workflow MCP |
-| gsd-next-cursor | `.cursor/skills/gsd-next-cursor/SKILL.md` | Advance one GSD unit in Cursor (plan slice / execute task) via gsd-workflow MCP; Cursor billing only |
+- GSD milestone state and artifacts live under `.gsd/` (gsd-pi v3); persistence goes through the `gsd-workflow` MCP server.
+- CI/CD and git hosting use Azure DevOps (`entwinedimaginations/Furqan`).
+- Library tab CMS uses `LIBRARY_MANIFEST_URL` via `--dart-define` (pipeline/Azure Library in prod; local HTTP manifest on LAN for dev).
+- Flutter SDK is managed with FVM (`.fvmrc` / `.fvm/`).
+- Codebase graph is maintained with graphify (`graphify-out/`; run `graphify update .` after substantive code edits).
+- Playbook templates (`_*` files) symlink into shared `ai-playbook`; committed wrappers (`AGENTS.md`, etc.) hold project-specific content; session scratch belongs in `.workflow/`.
+- `library-cms/scripts/` is tracked despite the root `scripts/` gitignore rule.
+- Dev environment uses Nix flake + direnv (`.envrc`, `flake.nix`, `flake.lock`); `.direnv/` is local cache and gitignored.
+- MCP config is split: repo-root `.mcp.json` (gsd-workflow, dart-mcp-server, azure-devops, etc.) and `.cursor/mcp.json` for Cursor-only servers (e.g. codeintel-ask); both use `mcpServers` (not `servers`).
+- Hybrid codebase search uses codeintel-ask (`ask` CLI + MCP in `.cursor/mcp.json`) — runs locally with no per-query API cost; prefer `graphify path`/`query` for graph-structure questions to keep agent context smaller; graphify handles architecture graph queries.
+- GSD milestone folders under `.gsd/milestones/M###/` can exist on disk while missing from `gsd.db`; register with `gsd_plan_milestone` before `gsd_plan_slice` or reliable `gsd_progress` for that milestone.
+- Claude Code hooks use `.claude/settings.json`; GitHub Copilot uses `.github/copilot-instructions.md` only (no Ruflo hooks).

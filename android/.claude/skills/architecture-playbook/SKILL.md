@@ -14,6 +14,7 @@ description: >
 
 **Where things live**
 
-- **`ARCHITECTURE.md`** — canonical **structure** (layers, modules, boundaries, verification). With default overlay it is usually a **symlink** to your shared `ai-playbook`; refine it there, not via client-only edits to the symlink path.
+- **`_ARCHITECTURE.md`** — playbook **template** (symlink to shared `ai-playbook`). Refine in ai-playbook, not in the client repo.
+- **`ARCHITECTURE.md`** — **project wrapper** (committed): `@_ARCHITECTURE.md` + `## Project Layout` for client-specific paths, modules, and diagrams.
 
 **Substantive work** — Read **`ARCHITECTURE.md`** before planning or implementing non-trivial features, refactors, or new modules. Do not duplicate that document in chat; do not treat `ARCHITECTURE.md` as session scratch—use **`SESSION_WORKFLOW.md`** and **`.workflow/`** for ongoing session state.

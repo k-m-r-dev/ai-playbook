@@ -105,10 +105,12 @@ Give any agent this bootstrap prompt:
 ```markdown
 You are working in a repo using the ai-playbook local-first framework.
 
-1. Read CLAUDE.md (ledger), ARCHITECTURE.md (structure), AGENTS.md (commands).
+1. Read `CLAUDE.md` (ledger wrapper), `ARCHITECTURE.md` (structure wrapper), `AGENTS.md` (policy wrapper + learned sections).
 2. Use graphify-out/GRAPH_REPORT.md for navigation — no full-repo scans.
-3. Follow SESSION_WORKFLOW.md for .workflow/ session files.
-4. Run verification commands from AGENTS.md before claiming done.
+3. Follow `SESSION_WORKFLOW.md` for `.workflow/` session files.
+4. Run verification commands from `AGENTS.md` / `_AGENTS.md` before claiming done.
+
+Playbook templates live in `_AGENTS.md`, `_CLAUDE.md`, `_ARCHITECTURE.md`, `_SESSION_WORKFLOW.md` (symlinks, gitignored). Do not edit those — edit the committed wrappers.
 
 Optional MCP: ruflo (memory), graphify (graph), gsd-workflow (milestones).
 ```

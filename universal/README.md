@@ -12,7 +12,7 @@ bash /path/to/ai-playbook/scripts/install-client-ai-overlay.sh \
   --mode symlink
 ```
 
-Then customize **`CLAUDE.md`**, **`ARCHITECTURE.md`**, and verification commands in **`AGENTS.md`** in your ai-playbook copy (symlink targets).
+Then customize committed **`CLAUDE.md`** (ledger), **`ARCHITECTURE.md`** (`## Project Layout`), and **`AGENTS.md`** (continual-learning sections). Playbook templates in **`_CLAUDE.md`**, **`_AGENTS.md`**, etc. are symlinks — edit those in your ai-playbook repo, not in the client checkout.
 
 ## First-time local infrastructure
 
@@ -35,10 +35,14 @@ Copy hook and MCP templates from `ai-playbook/config/` — see root **`FRAMEWORK
 
 | File | Role |
 |------|------|
-| `CLAUDE.md` | **Ledger** — stack, graph hubs, milestone, learnings (all tools) |
-| `AGENTS.md` | Policy, commands, tool matrix |
-| `ARCHITECTURE.md` | Module map and verification (fill per project) |
-| `SESSION_WORKFLOW.md` | `.workflow/` lifecycle |
+| `CLAUDE.md` | **Ledger wrapper** (committed) — `@_CLAUDE.md` + stack, topography, milestone, learnings |
+| `_CLAUDE.md` | Playbook entrypoint symlink |
+| `AGENTS.md` | **Policy wrapper** — `@_AGENTS.md` + continual-learning sections |
+| `_AGENTS.md` | Playbook policy symlink |
+| `ARCHITECTURE.md` | **Structure wrapper** — `@_ARCHITECTURE.md` + `## Project Layout` |
+| `_ARCHITECTURE.md` | Playbook architecture template symlink |
+| `SESSION_WORKFLOW.md` | **Process wrapper** — `@_SESSION_WORKFLOW.md` |
+| `_SESSION_WORKFLOW.md` | Playbook session process symlink |
 | `.github/copilot-instructions.md` | Copilot-specific directives |
 | `.cursor/rules/05-unified-ai-framework.mdc` | Token budget + local-first rules |
 

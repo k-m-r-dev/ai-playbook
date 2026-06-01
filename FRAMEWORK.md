@@ -59,14 +59,25 @@ ai-playbook/
 
 ## Core ledger: `CLAUDE.md`
 
-Every client project gets a root **`CLAUDE.md`** (from `universal/CLAUDE.md`) with four live sections:
+Every client project gets root **`CLAUDE.md`** (committed wrapper) and **`_CLAUDE.md`** (playbook symlink). The wrapper includes `@_CLAUDE.md` plus four live ledger sections:
 
 1. **Project environment** — stack, build/test commands, enabled engines
 2. **Active topography** — graphify hubs (paths into the codebase)
 3. **Milestone state** — GSD-Pi / `.gsd/` progress
 4. **Cross-session learnings** — durable decisions (ruflo-distilled)
 
-All frontends read this file first. Do not duplicate long architecture prose here — use **`ARCHITECTURE.md`**.
+The same **wrapper + `_` template** pattern applies to **`AGENTS.md`**, **`ARCHITECTURE.md`**, and **`SESSION_WORKFLOW.md`**:
+
+| Committed wrapper | Playbook symlink | Purpose |
+|-------------------|------------------|---------|
+| `AGENTS.md` | `_AGENTS.md` | `@_AGENTS.md` + continual-learning sections |
+| `CLAUDE.md` | `_CLAUDE.md` | `@_CLAUDE.md` + mutable ledger |
+| `ARCHITECTURE.md` | `_ARCHITECTURE.md` | `@_ARCHITECTURE.md` + `## Project Layout` |
+| `SESSION_WORKFLOW.md` | `_SESSION_WORKFLOW.md` | `@_SESSION_WORKFLOW.md` only |
+
+Playbook templates (`_*`) stay out of client git; wrappers are committed. Cursor **continual-learning** writes only to `AGENTS.md` — never mutating ai-playbook symlinks.
+
+All frontends read **`CLAUDE.md`** first. Do not duplicate long architecture prose there — use **`ARCHITECTURE.md`** (wrapper).
 
 ## Day-to-day loop
 
@@ -130,7 +141,7 @@ bash scripts/install-client-ai-overlay.sh \
   --mode symlink
 ```
 
-Managed paths are excluded from client git via `.git/info/exclude`. See root **`README.md`** for the full path list.
+Managed playbook templates (`_*` root files) are excluded from client git via `.git/info/exclude`. **Committed wrappers** (`AGENTS.md`, `CLAUDE.md`, etc.) are tracked in the client repo.
 
 ## Choosing a platform overlay
 
@@ -146,8 +157,19 @@ You may start with `universal` and add mobile playbooks later; avoid installing 
 
 ## Privacy
 
-- Overlay files stay out of client git history (exclude list).
+- Playbook template symlinks (`_*` root files) stay out of client git (exclude list); committed wrappers are tracked.
 - Vendors may still process file contents if their product sends workspace context to the cloud — configure enterprise settings separately.
+
+## Migrating legacy overlays
+
+If an existing client repo still has symlinked `AGENTS.md` (pre-wrapper model), run:
+
+```bash
+bash scripts/migrate-overlay-wrappers.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-app \
+  --platform flutter-riverpod
+```
 
 ## Further reading
 

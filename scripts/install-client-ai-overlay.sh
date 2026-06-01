@@ -23,14 +23,16 @@ Notes:
   - The source repository must store playbooks under <repo>/<platform>.
   - Use **--platform universal** for backend, frontend, desktop, infra, or generic repos.
   - Use ios|android|flutter-* for native/mobile-specific playbooks.
-  - Default mode is symlink.
+  - Default mode is symlink for playbook templates (`_*` root files).
+  - Committed wrappers (`AGENTS.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `SESSION_WORKFLOW.md`) are always **copy** mode.
   - `.workflow/` is always installed with **copy** mode so session logs stay project-owned.
-    `SESSION_WORKFLOW.md` uses the same **--mode** as other root files (default **symlink**, like `AGENTS.md`).
   - universal also installs `.github/copilot-instructions.md` (skipped if absent on other platforms).
 EOF
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/overlay-wrappers.sh
+source "$SCRIPT_DIR/lib/overlay-wrappers.sh"
 
 die() {
   printf 'Error: %s\n' "$1" >&2
@@ -158,9 +160,14 @@ BLOCK_END="# END ${NAME}:${PLATFORM}"
 [[ ! -e "$MANIFEST_PATH" ]] || die "An overlay for '$PLATFORM' is already installed for this client repo. Uninstall it first."
 
 MAPPINGS=(
+  "_AGENTS.md|_AGENTS.md"
   "AGENTS.md|AGENTS.md"
+  "_CLAUDE.md|_CLAUDE.md"
   "CLAUDE.md|CLAUDE.md"
+  "_ARCHITECTURE.md|_ARCHITECTURE.md"
   "ARCHITECTURE.md|ARCHITECTURE.md"
+  "_SESSION_WORKFLOW.md|_SESSION_WORKFLOW.md"
+  "SESSION_WORKFLOW.md|SESSION_WORKFLOW.md"
   "skills-lock.json|skills-lock.json"
   ".claude/helpers|.claude/helpers"
   ".claude/skills|.claude/skills"
@@ -170,16 +177,10 @@ MAPPINGS=(
   ".github/instructions|.github/instructions"
   ".github/copilot-instructions.md|.github/copilot-instructions.md"
   ".workflow|.workflow"
-  "SESSION_WORKFLOW.md|SESSION_WORKFLOW.md"
 )
 
 effective_install_mode() {
-  local source_rel="$1"
-  if [[ "$source_rel" == ".workflow" ]]; then
-    printf '%s' "copy"
-  else
-    printf '%s' "$MODE"
-  fi
+  overlay_effective_install_mode "$1" "$MODE"
 }
 
 for mapping in "${MAPPINGS[@]}"; do
@@ -232,23 +233,14 @@ for mapping in "${MAPPINGS[@]}"; do
 done
 
 remove_block "$EXCLUDE_FILE" "$BLOCK_BEGIN" "$BLOCK_END"
-append_block \
-  "$EXCLUDE_FILE" \
-  "$BLOCK_BEGIN" \
-  "$BLOCK_END" \
-  "/AGENTS.md" \
-  "/CLAUDE.md" \
-  "/ARCHITECTURE.md" \
-  "/skills-lock.json" \
-  "/.claude/helpers" \
-  "/.claude/skills" \
-  "/.cursor/rules" \
-  "/.cursor/skills" \
-  "/.github/agents" \
-  "/.github/instructions" \
-  "/.github/copilot-instructions.md" \
-  "/.workflow" \
-  "/SESSION_WORKFLOW.md"
+remove_block "$EXCLUDE_FILE" "$BLOCK_BEGIN" "$BLOCK_END"
+{
+  exclude_entries=()
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && exclude_entries+=("$line")
+  done < <(overlay_gitignore_info_exclude_template_entries)
+  append_block "$EXCLUDE_FILE" "$BLOCK_BEGIN" "$BLOCK_END" "${exclude_entries[@]}"
+}
 
 # shellcheck source=lib/overlay-gitignore.sh
 source "$SCRIPT_DIR/lib/overlay-gitignore.sh"

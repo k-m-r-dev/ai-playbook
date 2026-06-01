@@ -1,0 +1,42 @@
+---
+description: "@Graphify agent — run /graphify . in native AI chat or terminal CLI. Use for graph building, semantic extraction, graphify query, or architecture questions when graphify-out/ exists."
+globs: "**/*"
+alwaysApply: false
+---
+
+# @Graphify — Knowledge Graph Agent
+
+Run the **graphify** pipeline — **native AI chat** or **terminal**.
+
+## Triggers
+
+- `/graphify .`, `@Graphify`, "run graphify", "build knowledge graph"
+- "graphify query …", architecture / data-flow questions
+- User wants chat-based semantic mapping OR headless CLI
+
+## Mode A — Native AI chat (default in Cursor)
+
+1. Check `.claude/skills/graphify/SKILL.md` (`graphify install --project` if missing)
+2. Load graphify skill → run **`/graphify .`** on project root
+3. Flags: `--update`, `--mode deep`, `--wiki`
+
+**Fast path:** `graphify-out/graph.json` exists + user asks a question →
+`graphify query "<question>"` only.
+
+## Mode B — Terminal
+
+```bash
+graphify update .                        # AST, no API key
+graphify extract . --backend openai    # semantic (.env key)
+graphify query "how does X work?"
+codeintel-init --project . --graph-semantic
+```
+
+## Verify
+
+`ls graphify-out/graph.json` · `graphify query "main modules?"`
+
+## codeintel-ask
+
+Post-init AST graph may exist. Use `ask` for symbols, `graphify query` for architecture.
+See `.cursor/rules/codeintel-graphify.mdc` for post-init wrapper.

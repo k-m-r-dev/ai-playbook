@@ -15,7 +15,8 @@ This folder is a starter template for adding high-quality AI coding context to a
 
 ## Customization Order
 
-1. Fill in `ARCHITECTURE.md` with project-specific paths, environments, and naming.
-2. Replace placeholder commands with real build, test, lint, and format commands.
-3. Add project-specific security, performance, and compliance rules.
-4. Extend skill packs for networking, persistence, design system, and testing workflows.
+1. Fill in `ARCHITECTURE.md` → `## Project Layout` with project-specific paths, environments, and naming.
+2. Update `CLAUDE.md` ledger (stack, build/test commands, topography, milestones).
+3. Let continual-learning maintain `AGENTS.md` learned sections; extend shared policy in ai-playbook `_AGENTS.md`.
+4. Add project-specific security, performance, and compliance rules to `_AGENTS.md` in ai-playbook when they apply to all installs.
+5. Extend skill packs for networking, persistence, design system, and testing workflows in ai-playbook.

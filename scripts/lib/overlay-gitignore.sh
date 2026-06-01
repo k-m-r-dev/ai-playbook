@@ -1,6 +1,10 @@
 # shellcheck shell=bash
 # Shared helpers for client-repo .gitignore blocks (sourced by install/uninstall/patch scripts).
 
+SCRIPT_DIR_OVERLAY_GITIGNORE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=overlay-wrappers.sh
+source "$SCRIPT_DIR_OVERLAY_GITIGNORE/overlay-wrappers.sh"
+
 overlay_gitignore_artifacts_file() {
   local source_repo="$1"
   printf '%s/config/client-ai-gitignore-artifacts.txt' "$source_repo"
@@ -29,21 +33,7 @@ overlay_gitignore_read_patterns() {
 }
 
 overlay_gitignore_overlay_entries() {
-  cat <<'EOF'
-/AGENTS.md
-/CLAUDE.md
-/ARCHITECTURE.md
-/skills-lock.json
-/.claude/helpers
-/.claude/skills
-/.cursor/rules
-/.cursor/skills
-/.github/agents
-/.github/instructions
-/.github/copilot-instructions.md
-/.workflow
-/SESSION_WORKFLOW.md
-EOF
+  overlay_gitignore_template_entries
 }
 
 overlay_gitignore_ensure_file() {

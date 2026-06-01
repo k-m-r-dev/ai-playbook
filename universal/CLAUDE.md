@@ -1,10 +1,4 @@
-# CLAUDE.md — Core Project Ledger & Session State
-
-Universal entrypoint for **Claude Code**, **Cursor**, and **GitHub Copilot**. All three tools read this file first. Keep it high-signal; push durable policy to `AGENTS.md`, structure to `ARCHITECTURE.md`, and rhythm to `SESSION_WORKFLOW.md`.
-
-@AGENTS.md
-@ARCHITECTURE.md
-@SESSION_WORKFLOW.md
+@_CLAUDE.md
 
 ---
 
@@ -43,15 +37,3 @@ Append short, durable bullets after consolidation (`npx ruflo@latest memory cons
 ## Session scratch (optional — prefer `.workflow/`)
 
 For active work, use `.workflow/current_session_progress.md` per `SESSION_WORKFLOW.md`. Update the milestone section above only at meaningful handoffs.
-
----
-
-## Tool routing (read-only reference)
-
-| Tool | Primary config | Local engines |
-|------|----------------|---------------|
-| Claude Code | `.claude/settings.json`, `.mcp.json`, hooks | ruflo MCP, graphify hooks |
-| Cursor | `.cursor/rules/`, `.cursor/mcp.json` | graphify MCP, gsd-workflow MCP |
-| VS Code Copilot | `.github/copilot-instructions.md`, `.github/instructions/` | graphify-out reports (no MCP) |
-
-Full setup: `FRAMEWORK.md` in your `ai-playbook` source repo, or `universal/README.md` after overlay install.

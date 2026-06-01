@@ -17,4 +17,4 @@ description: >
 - **`SESSION_WORKFLOW.md`** — canonical **process** (templates, lifecycle, verification). With default overlay it is a **symlink** to your shared `ai-playbook`; refine it there, not via client-only edits to the symlink path.
 - **`.workflow/`** — **project-owned** files (copied at install/bootstrap). All session scratch, archive, and tracker updates for **this** repo go **here**.
 
-**Substantive work** — Open **`SESSION_WORKFLOW.md`** and follow it end-to-end. Do not duplicate that playbook in chat; do not treat `SESSION_WORKFLOW.md` as editable project state when it is a symlink.
+**Substantive work** — Open **`SESSION_WORKFLOW.md`** and follow it end-to-end. Do not duplicate that playbook in chat; use **`.workflow/`** for session scratch.
