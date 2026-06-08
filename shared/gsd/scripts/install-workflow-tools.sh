@@ -16,6 +16,8 @@ Usage: install-workflow-tools.sh [options]
   --repo PATH        Client repo for --project (default: pwd)
   --cursor --claude --copilot   IDE targets (default: all if any install mode)
   --tools LIST       Comma-separated: do-next,do-next-runner,gsd-plan-milestone,gsd-advance-unit
+  --platform NAME    After project install, harness platform.md + DELIVERY-PROFILE (universal|ios|...)
+  --harness-context  Alias for --platform with generic universal when skills installed
   --link|--copy      Project install mode (default: link on Unix)
   --dry-run          Print actions only
   --all              --project + --personal + all IDEs
@@ -38,6 +40,8 @@ DO_COPILOT=0
 INSTALL_MODE="link"
 DRY_RUN=0
 TOOLS="do-next,do-next-runner,gsd-plan-milestone,gsd-advance-unit"
+PLATFORM=""
+HARNESS_CONTEXT=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -48,6 +52,8 @@ while [[ $# -gt 0 ]]; do
     --claude) DO_CLAUDE=1; shift ;;
     --copilot) DO_COPILOT=1; shift ;;
     --tools) TOOLS="$2"; shift 2 ;;
+    --platform) PLATFORM="$2"; shift 2 ;;
+    --harness-context) HARNESS_CONTEXT=1; shift ;;
     --link) INSTALL_MODE="link"; shift ;;
     --copy) INSTALL_MODE="copy"; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
@@ -199,7 +205,22 @@ run_install() {
   check_gsd_gate "$base"
 }
 
-[[ "$MODE_PROJECT" == 1 ]] && run_install "$(cd "$REPO" && pwd)"
+if [[ "$MODE_PROJECT" == 1 ]]; then
+  project_base="$(cd "$REPO" && pwd)"
+  run_install "$project_base"
+  harness_platform="$PLATFORM"
+  [[ "$HARNESS_CONTEXT" == 1 && -z "$harness_platform" ]] && harness_platform="universal"
+  if [[ -n "$harness_platform" && "$DRY_RUN" != 1 ]]; then
+    playbook_root="$(cd "$GSD_ROOT/../.." && pwd)"
+    harness="$GSD_ROOT/scripts/harness-gsd-project-context.sh"
+    if [[ -x "$harness" || -f "$harness" ]]; then
+      chmod +x "$harness" 2>/dev/null || true
+      bash "$harness" --source-repo "$playbook_root" --client-repo "$project_base" --platform "$harness_platform"
+    fi
+  elif [[ -n "$harness_platform" && "$DRY_RUN" == 1 ]]; then
+    echo "HARNESS platform.md + DELIVERY-PROFILE for $harness_platform"
+  fi
+fi
 [[ "$MODE_PERSONAL" == 1 ]] && {
   [[ "$DO_CURSOR" == 1 ]] && run_install "$HOME"
   # Claude personal uses ~/.claude/skills only — run_install expects .cursor under same base

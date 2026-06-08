@@ -29,7 +29,21 @@ Canonical source for GSD workflow rules, do-next tooling, and multi-IDE skill te
 bash /path/to/ai-playbook/scripts/bootstrap-gsd-workflow.sh \
   --source-repo /path/to/ai-playbook \
   --client-repo /path/to/client \
+  --platform universal \
+  --harness-context \
   --init-gsd --with-do-next --patch-mcp
+```
+
+`--platform` + `--harness-context` seed **platform-specific** `.gsd/DELIVERY-PROFILE.md` and
+`.cursor/skills/*/platform.md` from `templates/platforms/<platform>/`. Always customize for the client.
+
+## Harness project context only
+
+```bash
+bash shared/gsd/scripts/harness-gsd-project-context.sh \
+  --source-repo /path/to/ai-playbook \
+  --client-repo /path/to/client \
+  --platform universal
 ```
 
 ## Install skills only (no overlay)

@@ -199,6 +199,8 @@ bash scripts/verify-hook-safety.sh
 bash scripts/bootstrap-gsd-workflow.sh \
   --source-repo ~/private/ai-playbook \
   --client-repo ~/projects/my-ios-app \
+  --platform ios \
+  --harness-context \
   --init-gsd --with-do-next --patch-mcp
 ```
 

@@ -21,14 +21,18 @@ done
   exit 1
 }
 
-bash "$SOURCE_REPO/shared/gsd/scripts/install-workflow-tools.sh" \
-  --project --cursor --claude --copilot \
-  --repo "$CLIENT_REPO" \
-  --tools "do-next,do-next-runner,gsd-plan-milestone,gsd-advance-unit"
+PLATFORM="${PLATFORM:-universal}"
 
 bash "$SOURCE_REPO/scripts/bootstrap-gsd-workflow.sh" \
   --source-repo "$SOURCE_REPO" \
   --client-repo "$CLIENT_REPO" \
+  --platform "$PLATFORM" \
   --init-gsd --with-do-next --patch-mcp
+
+bash "$SOURCE_REPO/shared/gsd/scripts/install-workflow-tools.sh" \
+  --project --cursor --claude --copilot \
+  --repo "$CLIENT_REPO" \
+  --platform "$PLATFORM" \
+  --tools "do-next,do-next-runner,gsd-plan-milestone,gsd-advance-unit"
 
 echo "add-do-next-to-overlay.sh complete."

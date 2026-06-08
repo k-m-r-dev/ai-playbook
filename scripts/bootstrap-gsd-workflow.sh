@@ -8,9 +8,12 @@ Usage:
   bootstrap-gsd-workflow.sh \
     --source-repo /path/to/ai-playbook \
     --client-repo /path/to/client \
-    [--init-gsd] [--with-do-next] [--patch-mcp] [--force] [--check]
+    [--platform universal|ios|android|flutter-riverpod|flutter-bloc] \
+    [--harness-context] [--init-gsd] [--with-do-next] [--patch-mcp] [--force] [--check]
 
 Copies project-owned .gsd/workflow, idea packages, smoke script, DELIVERY-PROFILE template.
+With --platform and --harness-context, copies platform-specific DELIVERY-PROFILE + platform.md
+from shared/gsd/templates/platforms/<platform>/ (skip existing unless --force).
 EOF
 }
 
@@ -18,9 +21,11 @@ die() { printf 'Error: %s\n' "$1" >&2; exit 1; }
 
 SOURCE_REPO=""
 CLIENT_REPO=""
+PLATFORM=""
 INIT_GSD=0
 WITH_DO_NEXT=0
 PATCH_MCP=0
+HARNESS_CONTEXT=0
 FORCE=0
 CHECK_ONLY=0
 
@@ -28,6 +33,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --source-repo) SOURCE_REPO="$2"; shift 2 ;;
     --client-repo) CLIENT_REPO="$2"; shift 2 ;;
+    --platform) PLATFORM="$2"; shift 2 ;;
+    --harness-context) HARNESS_CONTEXT=1; shift ;;
     --init-gsd) INIT_GSD=1; shift ;;
     --with-do-next) WITH_DO_NEXT=1; shift ;;
     --patch-mcp) PATCH_MCP=1; shift ;;
@@ -85,7 +92,11 @@ mkdir -p "$CLIENT_REPO/.gsd"
 copy_tree "$SHARED/workflow" "$CLIENT_REPO/.gsd/workflow"
 
 if [[ ! -f "$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md" || "$FORCE" == 1 ]]; then
-  cp "$SHARED/templates/DELIVERY-PROFILE.md" "$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md"
+  delivery_tpl="$SHARED/templates/DELIVERY-PROFILE.md"
+  if [[ -n "$PLATFORM" && -f "$SHARED/templates/platforms/$PLATFORM/DELIVERY-PROFILE.md" ]]; then
+    delivery_tpl="$SHARED/templates/platforms/$PLATFORM/DELIVERY-PROFILE.md"
+  fi
+  cp "$delivery_tpl" "$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md"
   status "COPY" ".gsd/DELIVERY-PROFILE.md"
 fi
 
@@ -97,6 +108,13 @@ fi
 if [[ "$WITH_DO_NEXT" == 1 ]]; then
   copy_tree "$SHARED/idea/do-next" "$CLIENT_REPO/.gsd/idea/do-next"
   copy_tree "$SHARED/idea/do-next-runner" "$CLIENT_REPO/.gsd/idea/do-next-runner"
+  mkdir -p "$CLIENT_REPO/.gsd/idea/do-next-runner/scripts"
+  cp "$SHARED/idea/do-next-runner/scripts/verify-sync.sh" \
+    "$CLIENT_REPO/.gsd/idea/do-next-runner/scripts/verify-sync.sh" 2>/dev/null \
+    || cp "$SHARED/scripts/verify-sync.sh" \
+      "$CLIENT_REPO/.gsd/idea/do-next-runner/scripts/verify-sync.sh"
+  chmod +x "$CLIENT_REPO/.gsd/idea/do-next-runner/scripts/verify-sync.sh"
+  status "COPY" ".gsd/idea/do-next-runner/scripts/verify-sync.sh"
 fi
 
 mkdir -p "$CLIENT_REPO/.workflow/scripts"
@@ -126,5 +144,15 @@ if [[ "$PATCH_MCP" == 1 && -f "$SOURCE_REPO/config/mcp.template.json" ]]; then
 fi
 
 mkdir -p "$CLIENT_REPO/.gsd/runtime/do-next-runner"
+
+if [[ "$HARNESS_CONTEXT" == 1 ]]; then
+  [[ -n "$PLATFORM" ]] || die "--harness-context requires --platform"
+  HARNESS="$SHARED/scripts/harness-gsd-project-context.sh"
+  [[ -x "$HARNESS" ]] || chmod +x "$HARNESS"
+  harness_args=(--source-repo "$SOURCE_REPO" --client-repo "$CLIENT_REPO" --platform "$PLATFORM")
+  [[ "$FORCE" == 1 ]] && harness_args+=(--force)
+  bash "$HARNESS" "${harness_args[@]}"
+fi
+
 status "DONE" "bootstrap complete for $CLIENT_REPO"
-printf '\nNext: $gsd-plan-milestone to create ROADMAP, then do next / $do-next-runner\n'
+printf '\nNext: customize .gsd/DELIVERY-PROFILE.md + platform.md, then $gsd-plan-milestone\n'
