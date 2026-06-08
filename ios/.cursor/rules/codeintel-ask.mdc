@@ -1,0 +1,64 @@
+---
+description: Use the codeintel-ask tool (ask CLI) when answering questions about where code lives, what calls what, how features are wired, or impact of a change. Prefer `ask` over reading files directly for codebase exploration.
+globs: "**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.py,**/*.kt,**/*.swift"
+alwaysApply: false
+---
+
+# codeintel-ask — Codebase Intelligence
+
+This project has a pre-built semantic index (LanceDB) and knowledge graph (graphify). Use the `ask` CLI for codebase exploration before reading files or grepping manually.
+
+## Core commands
+
+```bash
+ask "<natural language question>"     # hybrid search: vector + graph + LSP + grep
+ask-index                             # rebuild vector index after large changes
+codeintel-status                      # check if index is stale vs HEAD
+```
+
+## Trigger phrases — reach for `ask` when the user says
+
+- "where is X", "find X", "what calls Y", "what imports Z"
+- "how does feature X work", "breakdown the UI in X"
+- "provide a spec for", "reverse engineer"
+- "what would break if I change …"
+- "trace the flow of …", "migration mapping"
+- "show all usages of …"
+
+## Example queries
+
+```bash
+ask "where is the token refresh logic?"
+ask "breakdown the WorkOrderDetails UI in mobile-app"
+ask "provide a spec for the payment flow"
+ask "what calls useWorkOrders?"
+ask "how is payment processing wired end-to-end?"
+ask "what extends BaseService?"
+ask "WorkOrderCard definition"
+```
+
+## Monorepo — scope to a workspace
+
+```bash
+ask "question" --workspace mobile-app
+ask "question" --workspace app-v2
+```
+
+## Staleness
+
+Always run `codeintel-status` first when results seem off or after a `git merge`/branch switch. If stale: run `ask-index` (index only, ~30s) or `codeintel-init --update-graph` (graph + index, ~2 min).
+
+## Fallback order when `ask` is unavailable
+
+1. Cursor's built-in codebase search (`@codebase`)
+2. Exact grep for known symbol names
+3. Suggest the user runs `codeintel-init` to set up the tool
+
+## Semantic graph enrichment (`codeintel-graphify`)
+
+After init, the graph is **AST-only** (`graphify update`). For semantic mapping:
+
+1. Load `.claude/skills/graphify/SKILL.md` → run **`/graphify .`**
+2. Or: `codeintel-init --graph-semantic` (headless, needs LLM key in `.env`)
+
+See `.cursor/rules/codeintel-graphify.mdc` for trigger phrases.

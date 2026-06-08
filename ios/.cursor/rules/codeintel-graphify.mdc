@@ -1,0 +1,37 @@
+---
+description: Run semantic graphify enrichment after codeintel-init. Wraps /graphify — use for "/codeintel-graphify", "semantic graph", "enrich the graph", or when graphify-out exists but needs LLM-backed mapping.
+globs: "**/*"
+alwaysApply: false
+---
+
+# codeintel-graphify — Semantic graph enrichment
+
+After `codeintel-init`, projects have an **AST-only** graph (`graphify update`).
+For **semantic** INFERRED edges, use the graphify agent pipeline.
+
+## Trigger phrases
+
+- `/codeintel-graphify` or "codeintel graphify"
+- "graphify this project" / "run semantic graph" / "enrich the graph"
+- After init when user wants LLM-backed mapping in chat
+
+## What to do
+
+Prefer **`@Graphify`** for general `/graphify .` runs (chat or terminal).
+For post-init codeintel flow, use this rule:
+
+1. Confirm `graphify-out/graph.json` exists; if not: `graphify update .`
+2. Load **`.claude/skills/graphify/SKILL.md`** and follow it — run **`/graphify .`** on the project root
+3. Verify: `graphify query "main entry points?"`
+
+## Headless alternative
+
+```bash
+codeintel-init --project . --graph-semantic   # needs LLM key in .env
+graphify extract . --backend openai
+```
+
+## Query after enrichment
+
+- `ask "..."` — codeintel hybrid search
+- `graphify query "..."` — scoped graph traversal

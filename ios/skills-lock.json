@@ -36,15 +36,25 @@
             "sourceType": "local",
             "computedHash": "template-v1-architecture-playbook"
         },
-        "gsd-pi-cursor": {
-            "source": "local-template/gsd-pi-cursor",
+        "gsd-plan-milestone": {
+            "source": "local-template/gsd-plan-milestone",
             "sourceType": "local",
-            "computedHash": "template-v1-gsd-pi-cursor"
+            "computedHash": "template-v1-gsd-plan-milestone"
         },
-        "gsd-next-cursor": {
-            "source": "local-template/gsd-next-cursor",
+        "gsd-advance-unit": {
+            "source": "local-template/gsd-advance-unit",
             "sourceType": "local",
-            "computedHash": "template-v1-gsd-next-cursor"
+            "computedHash": "template-v1-gsd-advance-unit"
+        },
+        "do-next": {
+            "source": "local-template/do-next",
+            "sourceType": "local",
+            "computedHash": "template-v1-do-next"
+        },
+        "do-next-runner": {
+            "source": "local-template/do-next-runner",
+            "sourceType": "local",
+            "computedHash": "template-v1-do-next-runner"
         }
     }
 }

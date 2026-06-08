@@ -97,6 +97,7 @@ MODE="symlink"
 SOURCE_REPO=""
 CLIENT_REPO=""
 PLATFORM=""
+REQUIRE_GSD=1
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -119,6 +120,10 @@ while [[ $# -gt 0 ]]; do
     --name)
       NAME="$2"
       shift 2
+      ;;
+    --no-require-gsd)
+      REQUIRE_GSD=0
+      shift
       ;;
     --help|-h)
       usage
@@ -173,6 +178,8 @@ MAPPINGS=(
   ".claude/skills|.claude/skills"
   ".cursor/rules|.cursor/rules"
   ".cursor/skills|.cursor/skills"
+  ".cursor/agents|.cursor/agents"
+  ".claude/agents|.claude/agents"
   ".github/agents|.github/agents"
   ".github/instructions|.github/instructions"
   ".github/copilot-instructions.md|.github/copilot-instructions.md"
@@ -252,3 +259,13 @@ overlay_gitignore_apply_platform "$CLIENT_REPO" "$NAME" "$PLATFORM"
 printf 'Installed %s overlay into %s using %s mode.\n' "$PLATFORM" "$CLIENT_REPO" "$MODE"
 printf 'Managed state stored at %s\n' "$MANIFEST_PATH"
 printf 'Updated %s/.gitignore (local-artifacts + overlay:%s blocks)\n' "$CLIENT_REPO" "$PLATFORM"
+
+if [[ "$REQUIRE_GSD" == 1 && ! -d "$CLIENT_REPO/.gsd" ]]; then
+  printf '\n[WARN] .gsd/ not found in %s\n' "$CLIENT_REPO" >&2
+  printf '       GSD skills (gsd-plan-milestone, gsd-advance-unit, do-next, do-next-runner)\n' >&2
+  printf '       will NOT work until you bootstrap GSD:\n\n' >&2
+  printf '       bootstrap-gsd-workflow.sh \\\n' >&2
+  printf '         --source-repo %s \\\n' "$SOURCE_REPO" >&2
+  printf '         --client-repo %s \\\n' "$CLIENT_REPO" >&2
+  printf '         --init-gsd --patch-mcp --with-do-next\n\n' >&2
+fi

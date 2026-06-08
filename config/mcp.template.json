@@ -20,7 +20,18 @@
       "autoStart": false
     },
     "gsd-workflow": {
-      "comment": "Cursor GSD-Pi — configure per @opengsd/gsd-pi docs",
+      "comment": "GSD-Pi workflow MCP — set GSD_WORKFLOW_PROJECT_ROOT to client repo root",
+      "command": "node",
+      "args": ["$GSD_PI_ROOT/packages/mcp-server/dist/cli.js"],
+      "cwd": "/absolute/path/to/client-repo",
+      "env": {
+        "GSD_CLI_PATH": "gsd",
+        "GSD_BIN_PATH": "gsd",
+        "GSD_WORKFLOW_EXECUTORS_MODULE": "$GSD_AGENT_EXTENSIONS/gsd/tools/workflow-tool-executors.js",
+        "GSD_WORKFLOW_WRITE_GATE_MODULE": "$GSD_AGENT_EXTENSIONS/gsd/bootstrap/write-gate.js",
+        "GSD_PERSIST_WRITE_GATE_STATE": "1",
+        "GSD_WORKFLOW_PROJECT_ROOT": "/absolute/path/to/client-repo"
+      },
       "autoStart": false
     }
   }

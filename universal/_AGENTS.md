@@ -91,7 +91,9 @@ Definitions: `.github/agents/*.agent.md`
 | Structure | `ARCHITECTURE.md` | `15-architecture.mdc` | `architecture-playbook` | `architecture.instructions.md` |
 | Session | `SESSION_WORKFLOW.md` | `20-session-progress.mdc` | `session-progress-workflow` | `session-progress.instructions.md` |
 | Token budget | `CLAUDE.md` | `05-unified-ai-framework.mdc` | hooks / skills | copilot-instructions |
-| Milestones | GSD-Pi / `.gsd/` | `gsd-pi-cursor`, `gsd-next-cursor` | terminal / MCP | — |
+| GSD planning | `gsd-plan-milestone` | same | same | `gsd-plan-milestone.instructions.md` |
+| GSD execution | `gsd-advance-unit`, `do-next` | same | same | `gsd-advance-unit.instructions.md`, `do-next.instructions.md` |
+| Milestone auto-chain | `do-next-runner` | same | same | `do-next-runner.instructions.md` |
 
 ## Skills (Claude)
 

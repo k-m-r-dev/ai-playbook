@@ -50,7 +50,20 @@ Add to client `.mcp.json` or tool-specific MCP config:
 
 Adjust package names to match your installed graphify distribution.
 
-### 4. Install script mapping (optional)
+### 4. GSD workflow bootstrap (do-next family)
+
+Client repos need `.gsd/` before GSD-family skills work:
+
+```bash
+bash scripts/bootstrap-gsd-workflow.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-app \
+  --init-gsd --patch-mcp --with-do-next
+```
+
+Templates live in `shared/gsd/`. Overlay install warns when `.gsd/` is missing (`--no-require-gsd` to silence).
+
+### 5. Install script mapping (optional)
 
 To ship files with `install-client-ai-overlay.sh`, add paths under `universal/` (or a new `platform/`) and extend `MAPPINGS` in `scripts/install-client-ai-overlay.sh`:
 
@@ -68,7 +81,7 @@ For hook-based integrations, include helper scripts explicitly:
 
 This ensures client overlays receive hardened hook handlers (for example, `.claude/helpers/hook-handler.cjs`) and not just skill/rule files.
 
-### 5. Platform validation
+### 6. Platform validation
 
 Update platform allowlists in:
 
@@ -78,15 +91,15 @@ Update platform allowlists in:
 - `scripts/add-session-workflow-to-overlay.sh`
 - `scripts/add-cursor-skills-to-overlay.sh`
 
-### 6. Skills lock
+### 7. Skills lock
 
 Register Claude-compatible skills in `skills-lock.json` and add `.claude/skills/<name>/SKILL.md`.
 
-### 7. Document in FRAMEWORK.md
+### 8. Document in FRAMEWORK.md
 
 Add a subsection under **Tool setup** with install steps and limitations.
 
-### 8. Add migration + verification for safety-critical scripts
+### 9. Add migration + verification for safety-critical scripts
 
 If a change affects runtime safety (hooks, command dispatch, session lifecycle):
 

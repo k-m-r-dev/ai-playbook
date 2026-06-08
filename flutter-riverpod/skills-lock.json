@@ -1,50 +1,60 @@
 {
-  "version": 1,
-  "skills": {
-    "flutter-architecture": {
-      "source": "local-template/flutter-architecture",
-      "sourceType": "local",
-      "computedHash": "template-v1-flutter-architecture"
-    },
-    "flutter-riverpod-architecture": {
-      "source": "local-template/flutter-riverpod-architecture",
-      "sourceType": "local",
-      "computedHash": "template-v1-flutter-riverpod-architecture"
-    },
-    "native-data-fetching": {
-      "source": "local-template/native-data-fetching",
-      "sourceType": "local",
-      "computedHash": "template-v1-native-data-fetching"
-    },
-    "security-and-privacy": {
-      "source": "local-template/security-and-privacy",
-      "sourceType": "local",
-      "computedHash": "template-v1-security-and-privacy"
-    },
-    "flutter-platform-quality": {
-      "source": "local-template/flutter-platform-quality",
-      "sourceType": "local",
-      "computedHash": "template-v1-flutter-platform-quality"
-    },
-    "session-progress-workflow": {
-      "source": "local-template/session-progress-workflow",
-      "sourceType": "local",
-      "computedHash": "template-v1-session-progress-workflow"
-    },
-    "architecture-playbook": {
-      "source": "local-template/architecture-playbook",
-      "sourceType": "local",
-      "computedHash": "template-v1-architecture-playbook"
-    },
-    "gsd-pi-cursor": {
-      "source": "local-template/gsd-pi-cursor",
-      "sourceType": "local",
-      "computedHash": "template-v1-gsd-pi-cursor"
-    },
-    "gsd-next-cursor": {
-      "source": "local-template/gsd-next-cursor",
-      "sourceType": "local",
-      "computedHash": "template-v1-gsd-next-cursor"
+    "version": 1,
+    "skills": {
+        "ios-architecture": {
+            "source": "local-template/ios-architecture",
+            "sourceType": "local",
+            "computedHash": "template-v1-ios-architecture"
+        },
+        "native-ios-architecture": {
+            "source": "local-template/native-ios-architecture",
+            "sourceType": "local",
+            "computedHash": "template-v1-native-ios-architecture"
+        },
+        "native-data-fetching": {
+            "source": "local-template/native-data-fetching",
+            "sourceType": "local",
+            "computedHash": "template-v1-native-data-fetching"
+        },
+        "security-and-privacy": {
+            "source": "local-template/security-and-privacy",
+            "sourceType": "local",
+            "computedHash": "template-v1-security-and-privacy"
+        },
+        "apple-platform-quality": {
+            "source": "local-template/apple-platform-quality",
+            "sourceType": "local",
+            "computedHash": "template-v1-apple-platform-quality"
+        },
+        "session-progress-workflow": {
+            "source": "local-template/session-progress-workflow",
+            "sourceType": "local",
+            "computedHash": "template-v1-session-progress-workflow"
+        },
+        "architecture-playbook": {
+            "source": "local-template/architecture-playbook",
+            "sourceType": "local",
+            "computedHash": "template-v1-architecture-playbook"
+        },
+        "gsd-plan-milestone": {
+            "source": "local-template/gsd-plan-milestone",
+            "sourceType": "local",
+            "computedHash": "template-v1-gsd-plan-milestone"
+        },
+        "gsd-advance-unit": {
+            "source": "local-template/gsd-advance-unit",
+            "sourceType": "local",
+            "computedHash": "template-v1-gsd-advance-unit"
+        },
+        "do-next": {
+            "source": "local-template/do-next",
+            "sourceType": "local",
+            "computedHash": "template-v1-do-next"
+        },
+        "do-next-runner": {
+            "source": "local-template/do-next-runner",
+            "sourceType": "local",
+            "computedHash": "template-v1-do-next-runner"
+        }
     }
-  }
 }

@@ -120,8 +120,20 @@ Merge `config/claude.settings.local.example.json` into `.claude/settings.local.j
 
 1. Install overlay: `--platform universal`
 2. **Settings → MCP**: add graphify server — e.g. `graphify mcp start` if `uv tool install graphifyy` is on your PATH, or `uvx graphifyy mcp start` without a global install
-3. Enable **gsd-workflow** MCP for GSD-Pi skills under `.cursor/skills/`
-4. Rules in `.cursor/rules/` enforce ledger + token budget
+3. Enable **gsd-workflow** MCP for GSD skills under `.cursor/skills/`
+4. **Bootstrap GSD** in client repos: `bootstrap-gsd-workflow.sh --init-gsd --patch-mcp --with-do-next`
+5. Rules in `.cursor/rules/` enforce ledger + token budget
+
+### GSD milestone execution (after bootstrap)
+
+| Skill | Trigger | Role |
+| --- | --- | --- |
+| `gsd-plan-milestone` | `$gsd-plan-milestone` | Plan ROADMAP |
+| `gsd-advance-unit` | `$gsd-advance-unit` | One pure GSD unit |
+| `do-next` | `do next` | Custom workflow unit (smoke, gates, slice commits) |
+| `do-next-runner` | `$do-next-runner` | Auto-chain do-next units |
+
+Canonical templates: `shared/gsd/`. None work without `.gsd/` bootstrapped.
 
 Legacy `.cursorrules` at repo root is optional; prefer `.cursor/rules/`.
 

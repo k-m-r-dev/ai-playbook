@@ -12,6 +12,7 @@ ai-playbook/
   ios/ android/           # Native mobile depth
   flutter-riverpod/       # Flutter + Riverpod
   flutter-bloc/           # Flutter + Bloc
+  shared/gsd/             # GSD workflow + do-next templates (copied to client .gsd/)
   scripts/                # Install / uninstall / bootstrap
   config/                 # MCP + Claude hook templates
   FRAMEWORK.md            # Unified framework guide
@@ -45,9 +46,11 @@ Confirm `git status` in the client repo shows **no** staged AI overlay files (pa
 ### Installed paths
 
 - `AGENTS.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `SESSION_WORKFLOW.md`
-- `.claude/helpers`, `.claude/skills`, `.cursor/rules`, `.cursor/skills`
+- `.claude/helpers`, `.claude/skills`, `.claude/agents`, `.cursor/rules`, `.cursor/skills`, `.cursor/agents`
 - `.github/agents`, `.github/instructions`, `.github/copilot-instructions.md` (universal)
 - `.workflow/` (always **copied** — project-owned session state)
+
+GSD milestone skills (`do-next`, `do-next-runner`, `gsd-plan-milestone`, `gsd-advance-unit`) ship in the overlay. **Runtime** `.gsd/` (workflow rules, idea packages, smoke script) is **not** installed by the overlay alone — run **`bootstrap-gsd-workflow.sh`** (see below). Full adoption guide: **[shared/gsd/README.md](shared/gsd/README.md)**.
 
 ## Scripts guide (when to use what)
 
@@ -184,6 +187,54 @@ Single platform: add `--platform universal`. Lower-level control: `patch-hook-sa
 bash scripts/verify-hook-safety.sh
 ```
 
+### `scripts/bootstrap-gsd-workflow.sh`
+
+- **Use when**: a client repo has the overlay but needs project-owned GSD runtime (`.gsd/workflow/`, idea packages, smoke script, `DELIVERY-PROFILE.md`).
+- **Does**: copies from `shared/gsd/` into the client repo; optional `--init-gsd`, `--with-do-next`, `--patch-mcp` (writes gsd-workflow into `.mcp.json`).
+- **Check only**: `--check` reports `.gsd/`, workflow, and MCP readiness without copying.
+
+**Example (recommended after overlay install):**
+
+```bash
+bash scripts/bootstrap-gsd-workflow.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-ios-app \
+  --init-gsd --with-do-next --patch-mcp
+```
+
+### `scripts/add-do-next-to-overlay.sh`
+
+- **Use when**: an existing overlay client needs GSD/do-next skills + runtime in one step.
+- **Does**: runs `install-workflow-tools.sh` (all four GSD-family skills, all IDEs) then `bootstrap-gsd-workflow.sh`.
+
+**Example:**
+
+```bash
+bash scripts/add-do-next-to-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-ios-app \
+  --platform ios
+```
+
+### `scripts/sync-gsd-skills-to-overlays.sh`
+
+- **Use when**: you changed templates under `shared/gsd/` and need to refresh all platform overlays (`universal`, `ios`, `android`, `flutter-*`).
+- **Does**: re-runs the skill installer across playbook platform folders.
+
+### `shared/gsd/scripts/install-workflow-tools.sh`
+
+- **Use when**: installing or refreshing GSD-family skills without a full overlay reinstall.
+- **Modes**: `--project` (client repo) or `--personal` (`~/.cursor/skills`, `~/.claude/skills`); pick IDEs with `--cursor`, `--claude`, `--copilot`.
+- **Dry-run**: `--dry-run` prints actions without writing files.
+
+**Example (project, all IDEs):**
+
+```bash
+bash shared/gsd/scripts/install-workflow-tools.sh \
+  --project --cursor --claude --copilot \
+  --repo ~/projects/my-ios-app
+```
+
 ### `scripts/bootstrap-playbooks-from-aitools.sh` (legacy seed)
 
 - **Use when**: you have an existing repo with `aitools/<platform>` and want to seed/update your private `ai-playbook` repo.
@@ -204,7 +255,16 @@ bash scripts/bootstrap-playbooks-from-aitools.sh \
 1. Fill in **`CLAUDE.md`** (stack, topography, milestone, learnings).
 2. Customize **`ARCHITECTURE.md`** for the real module map.
 3. Set build/test commands in **`AGENTS.md`**.
-4. Optional local engines:
+4. **Bootstrap GSD** (if using milestone workflow):
+
+```bash
+bash scripts/bootstrap-gsd-workflow.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-app \
+  --init-gsd --with-do-next --patch-mcp
+```
+
+5. Optional local engines:
 
 ```bash
 npx ruflo@latest init --wizard
@@ -234,18 +294,38 @@ This copies `aitools/ios`, `android`, and Flutter variants. **`universal`** is m
 - Installer refuses to overwrite unmanaged existing paths
 - Already-installed clients: `scripts/patch-client-ai-gitignore.sh`
 
-## GSD in Cursor
+## GSD milestone workflow (Cursor, Claude, Copilot)
 
-| Skill | Use |
-|-------|-----|
-| `gsd-pi-cursor` | Grill → milestone ROADMAP |
-| `gsd-next-cursor` | One plan/execute unit at a time |
+**Readiness ladder** — skills do not work until `.gsd/` is bootstrapped:
 
-Requires **gsd-workflow** MCP. Uses Cursor billing — not terminal `/gsd` unless you opt in.
+```text
+1. install-client-ai-overlay.sh     → skills (symlinked into client)
+2. bootstrap-gsd-workflow.sh        → .gsd/ runtime (required)
+3. $gsd-plan-milestone              → ROADMAP
+4. do next / $do-next-runner        → custom workflow execution
+   — or $gsd-advance-unit           → pure GSD one unit
+```
+
+| Skill | Trigger | Role |
+| --- | --- | --- |
+| `gsd-plan-milestone` | `$gsd-plan-milestone` | Grill → formalize → ROADMAP |
+| `gsd-advance-unit` | `$gsd-advance-unit` | One pure GSD plan/execute unit |
+| `do-next` | `do next` / `$do-next` | Custom workflow unit (smoke, gates, slice commits) |
+| `do-next-runner` | `$do-next-runner` | Auto-chain do-next units |
+
+| IDE | Skill paths |
+| --- | --- |
+| Cursor | `.cursor/skills/<skill>/SKILL.md` |
+| Claude | `.claude/skills/<skill>/` (symlinked to Cursor) |
+| Copilot | `.github/instructions/<skill>.instructions.md` |
+
+Requires **gsd-workflow** MCP in `.mcp.json` (and `.cursor/mcp.json` for Cursor-only servers). Uses Cursor/Claude billing — not terminal `/gsd` unless you opt in. Canonical templates: **`shared/gsd/`** — see **[shared/gsd/README.md](shared/gsd/README.md)**.
 
 ## Add tools or patch existing overlays
 
 - New AI IDE / CLI: **[EXTENDING.md](EXTENDING.md)**
+- Missing GSD runtime or do-next skills: `scripts/add-do-next-to-overlay.sh` or `scripts/bootstrap-gsd-workflow.sh`
+- Refresh GSD skill templates across platforms: `scripts/sync-gsd-skills-to-overlays.sh`
 - Missing `SESSION_WORKFLOW.md`: `scripts/add-session-workflow-to-overlay.sh`
 - Missing `.github/copilot-instructions.md`: `scripts/add-copilot-instructions-to-overlay.sh`
 - Missing `.cursor/skills`: `scripts/add-cursor-skills-to-overlay.sh`
