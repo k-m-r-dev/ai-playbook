@@ -34,6 +34,17 @@ Also read `AGENTS.md` → *Milestone / Multi-PR Work*.
 
 Call **`gsd_progress`** (+ optionally **`gsd_milestone_status`**). Show milestone / slice / task, phase, nextAction, blockers.
 
+Run a **Git policy handshake** before routing milestone progression:
+
+1. Ask: "Do we require git push / PR workflow for this project scope right now?"
+2. Require one explicit mode for this invocation:
+   - `none` — no push/PR gating
+   - `slice` — push/PR checkpoints at each slice completion
+   - `milestone` — push/PR checkpoints at milestone progression only
+3. If user does not confirm mode, **STOP** and wait.
+
+When in `slice` or `milestone` mode, never auto-run git operations. Each stage needs explicit confirmation in-order.
+
 If MCP unavailable, stop — do not guess from markdown alone.
 
 If no active milestone, stop — direct user to **`$gsd-plan-milestone`**.
@@ -89,16 +100,35 @@ If no active milestone, stop — direct user to **`$gsd-plan-milestone`**.
 1. Slice-level verification
 2. **`gsd_slice_complete`**
 3. One commit per DELIVERY-PROFILE: `feat({scope-slug}): {summary}`
-4. **No push** without explicit approval
-5. Update `.workflow/progress_tracker.md` if applicable
+4. **Slice checkpoint (always ask):**
+   - Ask whether this slice should run push/PR now.
+   - If mode is `none`: skip push/PR and continue.
+   - If mode is `milestone`: ask "defer push/PR to milestone checkpoint?"; require explicit yes/no.
+   - If mode is `slice`: run staged confirmations below.
+5. **Stage confirmations for slice mode (strict order):**
+   - Stage A: "Push current branch now?"
+   - Stage B (only after successful push): "Create PR now?"
+   - Stage C (after PR create/skip): "Proceed to next unit?"
+   - Any "no" stops progression and reports pending stage.
+6. Update `.workflow/progress_tracker.md` if applicable
 
 ### 2d. Milestone gate
 
 Wait for prerequisite milestone in **`gsd_milestone_status`**.
 
+At milestone progression boundary, run **milestone checkpoint**:
+
+1. Ask whether milestone-level push/PR is required for this project right now.
+2. If user says no: continue with no Git gate.
+3. If user says yes: execute staged confirmations in-order:
+   - Stage A: confirm push for milestone branch
+   - Stage B: after push, confirm PR creation
+   - Stage C: after PR exists, confirm waiting for merge before advancing
+4. If milestone push/PR is required but not completed/merged, **BLOCK** advancement to next milestone.
+
 ### 3. Report
 
-Unit summary, verification, smoke status, next `gsd_progress` state.
+Unit summary, verification, smoke status, chosen Git mode, checkpoint outcomes, next `gsd_progress` state.
 
 End with: **Say `do next` for the next unit.**
 
@@ -114,7 +144,7 @@ Do not skip on: new session, slice boundary, after gate saves / plan edits, bran
 
 - No auto-sync on markdown/DB drift
 - No raw `.gsd/gsd.db` or `.gsd/STATE.md` edits
-- No push without approval
+- No push/PR without explicit stage confirmation
 - No multiple units unless user says "run N steps"
 - No `gsd_execute` / terminal `/gsd next` as backend
 

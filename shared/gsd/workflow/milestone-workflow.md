@@ -65,6 +65,18 @@ What constitutes a “done” delivery increment for humans:
 | **`milestone`** | Each milestone is one PR or one approved push batch |
 | **`custom`** | Defined in milestone map |
 
+### Git/PR checkpoint mode (do-next family)
+
+This controls the default checkpoint cadence used by `do next` / `$do-next-runner`:
+
+| Mode | Meaning |
+| --- | --- |
+| **`none`** | No push/PR checkpoint required by default |
+| **`slice`** | Checkpoint push/PR at each slice completion |
+| **`milestone`** | Checkpoint push/PR at milestone progression |
+
+Even with a mode set, remote operations still require explicit staged user confirmations.
+
 ### Completion rule
 
 A milestone (or slice, when `review_unit: slice`) is **complete** when:

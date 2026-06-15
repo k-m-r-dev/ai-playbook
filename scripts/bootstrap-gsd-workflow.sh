@@ -57,6 +57,149 @@ SHARED="$SOURCE_REPO/shared/gsd"
 
 status() { printf '[%s] %s\n' "$1" "$2"; }
 
+remove_block() {
+  local file="$1"
+  local begin="$2"
+  local end="$3"
+  local temp_file
+  temp_file="$(mktemp)"
+  awk -v begin="$begin" -v end="$end" '
+    $0 == begin { skip = 1; next }
+    $0 == end { skip = 0; next }
+    skip != 1 { print }
+  ' "$file" > "$temp_file"
+  mv "$temp_file" "$file"
+}
+
+inject_universal_prettier_validation() {
+  local profile="$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md"
+  local pkg="$CLIENT_REPO/package.json"
+  local begin="<!-- BEGIN AUTO:PRETTIER-VALIDATION -->"
+  local end="<!-- END AUTO:PRETTIER-VALIDATION -->"
+  local package_manager="npm"
+  local cmd_prefix="npm run"
+  local check_cmd=""
+  local fix_cmd=""
+  local check_script=""
+  local fix_script=""
+  local node_out=""
+  local had_failure=0
+
+  [[ "$PLATFORM" == "universal" ]] || return 0
+  [[ -f "$profile" ]] || return 0
+  [[ -f "$pkg" ]] || return 0
+  command -v node >/dev/null 2>&1 || return 0
+
+  if [[ -f "$CLIENT_REPO/pnpm-lock.yaml" ]]; then
+    package_manager="pnpm"
+    cmd_prefix="pnpm"
+  elif [[ -f "$CLIENT_REPO/yarn.lock" ]]; then
+    package_manager="yarn"
+    cmd_prefix="yarn"
+  elif [[ -f "$CLIENT_REPO/bun.lock" || -f "$CLIENT_REPO/bun.lockb" ]]; then
+    package_manager="bun"
+    cmd_prefix="bun run"
+  fi
+
+  node_out="$(node - "$pkg" <<'NODE'
+const fs = require('fs');
+const pkgPath = process.argv[2];
+const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+const scripts = pkg.scripts || {};
+const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+const keys = Object.keys(scripts);
+
+const checkByName = ['prettier:check', 'check:prettier', 'lint:prettier', 'format:check:prettier'];
+const fixByName = ['prettier:write', 'write:prettier', 'format:prettier'];
+
+let check = checkByName.find((k) => keys.includes(k)) || '';
+let fix = fixByName.find((k) => keys.includes(k)) || '';
+
+if (!check) {
+  check = keys.find((k) => {
+    const v = String(scripts[k] || '').toLowerCase();
+    return v.includes('prettier') && v.includes('--check');
+  }) || '';
+}
+
+if (!fix) {
+  fix = keys.find((k) => {
+    const v = String(scripts[k] || '').toLowerCase();
+    return v.includes('prettier') && (v.includes('--write') || !v.includes('--check'));
+  }) || '';
+}
+
+const hasPrettier = Boolean(deps.prettier || check || fix);
+if (!hasPrettier) {
+  process.exit(10);
+}
+
+console.log(check);
+console.log(fix);
+NODE
+  )" || return 0
+
+  mapfile -t _prettier_lines <<< "$node_out"
+  check_script="${_prettier_lines[0]:-}"
+  fix_script="${_prettier_lines[1]:-}"
+
+  if [[ -n "$check_script" ]]; then
+    check_cmd="$cmd_prefix $check_script"
+  else
+    case "$package_manager" in
+      npm) check_cmd="npm exec -- prettier --check --ignore-unknown src test tests __tests__ ." ;;
+      yarn) check_cmd="yarn prettier --check --ignore-unknown src test tests __tests__ ." ;;
+      pnpm) check_cmd="pnpm exec prettier --check --ignore-unknown src test tests __tests__ ." ;;
+      bun) check_cmd="bunx prettier --check --ignore-unknown src test tests __tests__ ." ;;
+    esac
+  fi
+
+  if [[ -n "$fix_script" ]]; then
+    fix_cmd="$cmd_prefix $fix_script"
+  else
+    case "$package_manager" in
+      npm) fix_cmd="npm exec -- prettier --write --ignore-unknown src test tests __tests__ ." ;;
+      yarn) fix_cmd="yarn prettier --write --ignore-unknown src test tests __tests__ ." ;;
+      pnpm) fix_cmd="pnpm exec prettier --write --ignore-unknown src test tests __tests__ ." ;;
+      bun) fix_cmd="bunx prettier --write --ignore-unknown src test tests __tests__ ." ;;
+    esac
+  fi
+
+  if ! (cd "$CLIENT_REPO" && eval "$check_cmd"); then
+    had_failure=1
+    status "AUTO" "prettier check failed; attempting auto-fix"
+    if (cd "$CLIENT_REPO" && eval "$fix_cmd"); then
+      if ! (cd "$CLIENT_REPO" && eval "$check_cmd"); then
+        status "WARN" "prettier check still failing after auto-fix"
+      else
+        status "AUTO" "prettier check passed after auto-fix"
+      fi
+    else
+      status "WARN" "prettier auto-fix command failed"
+    fi
+  fi
+
+  remove_block "$profile" "$begin" "$end"
+
+  {
+    printf '\n%s\n' "$begin"
+    printf '## Validation (auto-detected Prettier)\n\n'
+    printf 'Run Prettier for JS/RN source + test files as part of verification.\n\n'
+    printf '```bash\n'
+    printf '%s\n' "$check_cmd"
+    printf '%s\n' "$fix_cmd"
+    printf '%s\n' "$check_cmd"
+    printf '```\n\n'
+    if [[ "$had_failure" == "1" ]]; then
+      printf '_Bootstrap attempted auto-fix because check failed during setup._\n\n'
+    fi
+    printf '> Commands were auto-selected for this repo package manager (%s).\n' "$package_manager"
+    printf '%s\n' "$end"
+  } >> "$profile"
+
+  status "AUTO" ".gsd/DELIVERY-PROFILE.md prettier validation block"
+}
+
 HAS_GSD=0
 [[ -d "$CLIENT_REPO/.gsd" ]] && HAS_GSD=1
 HAS_WORKFLOW=0
@@ -104,6 +247,8 @@ if [[ ! -f "$CLIENT_REPO/.gsd/DECISIONS.md" ]]; then
   cp "$SHARED/templates/DECISIONS.md" "$CLIENT_REPO/.gsd/DECISIONS.md"
   status "COPY" ".gsd/DECISIONS.md"
 fi
+
+inject_universal_prettier_validation
 
 if [[ "$WITH_DO_NEXT" == 1 ]]; then
   copy_tree "$SHARED/idea/do-next" "$CLIENT_REPO/.gsd/idea/do-next"

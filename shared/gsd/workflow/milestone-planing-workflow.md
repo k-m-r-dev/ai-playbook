@@ -82,6 +82,7 @@ Fill this before execution. Copy into roadmap, `M###-ROADMAP.md`, or `.gsd/DELIV
 | **Integration branch** | Yes | e.g. `develop`, `main` |
 | **Commit cadence** | Yes | `task` \| `slice` \| `milestone` \| `custom` |
 | **Review unit** | Yes | `none` \| `slice` \| `milestone` \| `custom` |
+| **Git/PR checkpoint mode** | Yes | `none` \| `slice` \| `milestone`; drives do-next checkpoint defaults |
 | Branch name | When strategy ≠ `trunk-direct` | e.g. `feature/opinion-feed` |
 | Execution sequence | Yes | Slice order + dependencies |
 | Validation commands | Yes | Project-specific |
@@ -100,6 +101,12 @@ Fill this before execution. Copy into roadmap, `M###-ROADMAP.md`, or `.gsd/DELIV
 | Multi-milestone workstream | mix per milestone | usually `slice` or `milestone` | per map |
 
 These are defaults — **record the actual choice** in the milestone map.
+
+Set `Git/PR checkpoint mode` to match how remote workflow should run:
+
+- `none` — no push/PR gating
+- `slice` — push/PR checkpoint at each slice completion
+- `milestone` — push/PR checkpoint at milestone progression
 
 ---
 
