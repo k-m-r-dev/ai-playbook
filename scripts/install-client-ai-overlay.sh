@@ -3,13 +3,14 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat <<'USAGE'
 Usage:
   install-client-ai-overlay.sh \
     --source-repo /path/to/ai-playbook \
     --client-repo /path/to/client-repo \
     --platform universal|ios|android|flutter-riverpod|flutter-bloc \
     [--mode symlink|copy] \
+    [--existing-policy fail|preserve|merge] \
     [--name ai-playbook]
 
 Behavior:
@@ -17,7 +18,10 @@ Behavior:
   - Stores install state under the client repository's .git directory.
   - Adds managed paths to .git/info/exclude.
   - Appends managed blocks to the client .gitignore (runtime artifacts + overlay paths).
-  - Refuses to overwrite existing unmanaged files or directories.
+  - Keeps existing unmanaged files/directories and appends missing overlay content by default.
+  - --existing-policy preserve keeps existing unmanaged targets and installs only missing paths.
+  - --existing-policy merge keeps existing unmanaged targets and also merges missing files into existing directories (never overwrites existing files).
+  - --existing-policy fail restores strict behavior and stops on pre-existing unmanaged targets.
 
 Notes:
   - The source repository must store playbooks under <repo>/<platform>.
@@ -27,7 +31,7 @@ Notes:
   - Committed wrappers (`AGENTS.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `SESSION_WORKFLOW.md`) are always **copy** mode.
   - `.workflow/` is always installed with **copy** mode so session logs stay project-owned.
   - universal also installs `.github/copilot-instructions.md` (skipped if absent on other platforms).
-EOF
+USAGE
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -92,8 +96,46 @@ is_retained_project_workflow() {
   [[ "$dest_rel" == ".workflow" ]] && [[ -d "$dest_path" ]]
 }
 
+wrapper_include_line() {
+  case "$1" in
+    AGENTS.md) printf '%s' '@_AGENTS.md' ;;
+    CLAUDE.md) printf '%s' '@_CLAUDE.md' ;;
+    ARCHITECTURE.md) printf '%s' '@_ARCHITECTURE.md' ;;
+    SESSION_WORKFLOW.md) printf '%s' '@_SESSION_WORKFLOW.md' ;;
+    *) return 1 ;;
+  esac
+}
+
+ensure_wrapper_include() {
+  local wrapper_path="$1"
+  local include_line="$2"
+
+  [[ -f "$wrapper_path" ]] || return 0
+  grep -Fxq "$include_line" "$wrapper_path" && return 0
+
+  local temp_file
+  temp_file="$(mktemp)"
+  {
+    printf '%s\n\n' "$include_line"
+    cat "$wrapper_path"
+  } > "$temp_file"
+  mv "$temp_file" "$wrapper_path"
+}
+
+merge_missing_dir_entries() {
+  local source_dir="$1"
+  local dest_dir="$2"
+
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --ignore-existing "$source_dir"/ "$dest_dir"/
+  else
+    cp -Rn "$source_dir"/. "$dest_dir"/
+  fi
+}
+
 NAME="ai-playbook"
 MODE="symlink"
+EXISTING_POLICY="merge"
 SOURCE_REPO=""
 CLIENT_REPO=""
 PLATFORM=""
@@ -115,6 +157,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --mode)
       MODE="$2"
+      shift 2
+      ;;
+    --existing-policy)
+      EXISTING_POLICY="$2"
       shift 2
       ;;
     --name)
@@ -139,6 +185,7 @@ done
 [[ -n "$CLIENT_REPO" ]] || die "--client-repo is required"
 [[ "$PLATFORM" == "universal" || "$PLATFORM" == "ios" || "$PLATFORM" == "android" || "$PLATFORM" == "flutter-riverpod" || "$PLATFORM" == "flutter-bloc" ]] || die "--platform must be universal, ios, android, flutter-riverpod, or flutter-bloc"
 [[ "$MODE" == "symlink" || "$MODE" == "copy" ]] || die "--mode must be symlink or copy"
+[[ "$EXISTING_POLICY" == "fail" || "$EXISTING_POLICY" == "preserve" || "$EXISTING_POLICY" == "merge" ]] || die "--existing-policy must be fail, preserve, or merge"
 
 [[ -d "$SOURCE_REPO" ]] || die "Source repository does not exist: $SOURCE_REPO"
 [[ -d "$CLIENT_REPO" ]] || die "Client repository does not exist: $CLIENT_REPO"
@@ -205,7 +252,9 @@ for mapping in "${MAPPINGS[@]}"; do
     if is_retained_project_workflow "$dest_rel" "$dest_path"; then
       continue
     fi
-    die "Target already exists and is not managed by this installer: $dest_rel"
+    if [[ "$EXISTING_POLICY" == "fail" ]]; then
+      die "Target already exists and is not managed by this installer: $dest_rel"
+    fi
   fi
 done
 
@@ -220,7 +269,27 @@ for mapping in "${MAPPINGS[@]}"; do
 
   [[ -e "$source_path" ]] || continue
 
+  include_line=""
+  if include_line="$(wrapper_include_line "$dest_rel" 2>/dev/null)"; then
+    template_dest="$CLIENT_REPO/_${dest_rel}"
+  else
+    template_dest=""
+  fi
+
   if is_retained_project_workflow "$dest_rel" "$dest_path"; then
+    printf '%s\tretain\t%s\n' "$dest_path" "$source_path" >> "$MANIFEST_PATH"
+    continue
+  fi
+
+  if [[ -e "$dest_path" || -L "$dest_path" ]]; then
+    if [[ "$EXISTING_POLICY" == "merge" && -d "$source_path" && -d "$dest_path" && ! -L "$dest_path" ]]; then
+      merge_missing_dir_entries "$source_path" "$dest_path"
+    fi
+
+    if [[ -n "$template_dest" && -f "$template_dest" ]]; then
+      ensure_wrapper_include "$dest_path" "$include_line"
+    fi
+
     printf '%s\tretain\t%s\n' "$dest_path" "$source_path" >> "$MANIFEST_PATH"
     continue
   fi
@@ -234,6 +303,10 @@ for mapping in "${MAPPINGS[@]}"; do
     ln -s "$source_path" "$dest_path"
   else
     cp -R "$source_path" "$dest_path"
+  fi
+
+  if [[ -n "$template_dest" && -f "$template_dest" ]]; then
+    ensure_wrapper_include "$dest_path" "$include_line"
   fi
 
   printf '%s\t%s\t%s\n' "$dest_path" "$install_mode" "$source_path" >> "$MANIFEST_PATH"
@@ -257,6 +330,7 @@ overlay_gitignore_apply_artifacts "$CLIENT_REPO" "$NAME" "$SOURCE_REPO" \
 overlay_gitignore_apply_platform "$CLIENT_REPO" "$NAME" "$PLATFORM"
 
 printf 'Installed %s overlay into %s using %s mode.\n' "$PLATFORM" "$CLIENT_REPO" "$MODE"
+printf 'Existing target policy: %s\n' "$EXISTING_POLICY"
 printf 'Managed state stored at %s\n' "$MANIFEST_PATH"
 printf 'Updated %s/.gitignore (local-artifacts + overlay:%s blocks)\n' "$CLIENT_REPO" "$PLATFORM"
 

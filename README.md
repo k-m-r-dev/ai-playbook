@@ -61,6 +61,7 @@ These scripts are for **installing and maintaining overlays in local client repo
 - **Use when**: first-time install of the overlay into a client repo.
 - **Does**: copies/symlinks overlay files into the client repo, writes a manifest to `.git/ai-playbook/<platform>.manifest.tsv`, and adds paths to `.git/info/exclude`.
 - **Default mode**: `symlink` (recommended). `.workflow/` is always copied.
+- **Default existing-target policy**: `merge` (safe for existing projects; keeps existing files and only adds missing overlay content).
 
 **Example (generic repo — recommended):**
 
@@ -80,6 +81,16 @@ bash scripts/install-client-ai-overlay.sh \
   --client-repo ~/projects/my-service \
   --platform universal \
   --mode copy
+```
+
+**Example (strict fail-fast, legacy behavior):**
+
+```bash
+bash scripts/install-client-ai-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-service \
+  --platform universal \
+  --existing-policy fail
 ```
 
 **Example (mobile-specific overlay):**

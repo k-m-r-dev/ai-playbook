@@ -150,7 +150,8 @@ bash scripts/install-client-ai-overlay.sh \
   --source-repo ~/private/ai-playbook \
   --client-repo ~/projects/my-api \
   --platform universal \
-  --mode symlink
+  --mode symlink \
+  --existing-policy merge
 ```
 
 Managed playbook templates (`_*` root files) are excluded from client git via `.git/info/exclude`. **Committed wrappers** (`AGENTS.md`, `CLAUDE.md`, etc.) are tracked in the client repo.
