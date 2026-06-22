@@ -37,6 +37,16 @@ bash /path/to/ai-playbook/scripts/bootstrap-gsd-workflow.sh \
 `--platform` + `--harness-context` seed **platform-specific** `.gsd/DELIVERY-PROFILE.md` and
 `.cursor/skills/*/platform.md` from `templates/platforms/<platform>/`. Always customize for the client.
 
+For `--platform universal`, harness/bootstrap auto-detect project style and choose from:
+
+- `templates/platforms/universal/php/`
+- `templates/platforms/universal/node/`
+- `templates/platforms/universal/react-native-mono/`
+- `templates/platforms/universal/python/`
+- fallback `templates/platforms/universal/`
+
+Override auto-detection with `--project-style <style>`.
+
 ## Harness project context only
 
 ```bash

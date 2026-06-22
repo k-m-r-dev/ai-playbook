@@ -12,6 +12,8 @@ Usage:
 
 Behavior:
   - Removes only files previously installed by the matching installer.
+  - Removes auto-injected wrapper includes (`@_AGENTS.md`, `@_CLAUDE.md`, etc.)
+    from retained project files.
   - Removes the managed block from .git/info/exclude.
   - Removes managed .gitignore blocks for this platform (and local-artifacts if no overlays remain).
   - Leaves unrelated client files untouched.
@@ -54,6 +56,33 @@ prune_empty_parents() {
     rmdir "$current" 2>/dev/null || break
     current="$(dirname "$current")"
   done
+}
+
+wrapper_include_line_for_file() {
+  local file_name="$1"
+  case "$file_name" in
+    AGENTS.md) printf '%s' '@_AGENTS.md' ;;
+    CLAUDE.md) printf '%s' '@_CLAUDE.md' ;;
+    ARCHITECTURE.md) printf '%s' '@_ARCHITECTURE.md' ;;
+    SESSION_WORKFLOW.md) printf '%s' '@_SESSION_WORKFLOW.md' ;;
+    *) return 1 ;;
+  esac
+}
+
+remove_wrapper_include_if_present() {
+  local target_file="$1"
+  local include_line="$2"
+  local temp_file
+
+  [[ -f "$target_file" ]] || return 0
+  grep -Fxq "$include_line" "$target_file" || return 0
+
+  temp_file="$(mktemp)"
+  awk -v include="$include_line" '
+    $0 == include { next }
+    { print }
+  ' "$target_file" > "$temp_file"
+  mv "$temp_file" "$target_file"
 }
 
 NAME="ai-playbook"
@@ -109,6 +138,11 @@ while IFS=$'\t' read -r dest_path mode source_path; do
   [[ -n "$dest_path" ]] || continue
 
   if [[ "$mode" == "retain" ]]; then
+    file_name="$(basename "$dest_path")"
+    include_line=""
+    if include_line="$(wrapper_include_line_for_file "$file_name" 2>/dev/null)"; then
+      remove_wrapper_include_if_present "$dest_path" "$include_line"
+    fi
     continue
   fi
 

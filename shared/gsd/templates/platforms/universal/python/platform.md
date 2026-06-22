@@ -1,13 +1,12 @@
-# Platform context — universal/node (do-next / gsd-advance-unit)
+# Platform context — universal/python (do-next / gsd-advance-unit)
 
 Customize after bootstrap. Commands should match `AGENTS.md`.
 
 ## Verification
 
 ```bash
-npm test
-npm run lint
-npm run typecheck
+pytest
+ruff check .
 ```
 
 ## Read order

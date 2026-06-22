@@ -10,6 +10,7 @@ Usage:
     --client-repo /path/to/client-repo \
     --platform universal|ios|android|flutter-riverpod|flutter-bloc \
     [--mode symlink|copy] \
+    [--project-style auto|php|node|react-native-mono|python|generic] \
     [--existing-policy fail|preserve|merge] \
     [--name ai-playbook]
 
@@ -26,6 +27,8 @@ Behavior:
 Notes:
   - The source repository must store playbooks under <repo>/<platform>.
   - Use **--platform universal** for backend, frontend, desktop, infra, or generic repos.
+  - For `universal`, root `_*.md` templates can be style-specific via
+    `universal/styles/<style>/` with auto-detection by default.
   - Use ios|android|flutter-* for native/mobile-specific playbooks.
   - Default mode is symlink for playbook templates (`_*` root files).
   - Committed wrappers (`AGENTS.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `SESSION_WORKFLOW.md`) are always **copy** mode.
@@ -135,6 +138,8 @@ merge_missing_dir_entries() {
 
 NAME="ai-playbook"
 MODE="symlink"
+PROJECT_STYLE="auto"
+SELECTED_PROJECT_STYLE=""
 EXISTING_POLICY="merge"
 SOURCE_REPO=""
 CLIENT_REPO=""
@@ -157,6 +162,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --mode)
       MODE="$2"
+      shift 2
+      ;;
+    --project-style)
+      PROJECT_STYLE="$2"
       shift 2
       ;;
     --existing-policy)
@@ -185,6 +194,7 @@ done
 [[ -n "$CLIENT_REPO" ]] || die "--client-repo is required"
 [[ "$PLATFORM" == "universal" || "$PLATFORM" == "ios" || "$PLATFORM" == "android" || "$PLATFORM" == "flutter-riverpod" || "$PLATFORM" == "flutter-bloc" ]] || die "--platform must be universal, ios, android, flutter-riverpod, or flutter-bloc"
 [[ "$MODE" == "symlink" || "$MODE" == "copy" ]] || die "--mode must be symlink or copy"
+[[ "$PROJECT_STYLE" == "auto" || "$PROJECT_STYLE" == "php" || "$PROJECT_STYLE" == "node" || "$PROJECT_STYLE" == "react-native-mono" || "$PROJECT_STYLE" == "python" || "$PROJECT_STYLE" == "generic" ]] || die "--project-style must be auto, php, node, react-native-mono, python, or generic"
 [[ "$EXISTING_POLICY" == "fail" || "$EXISTING_POLICY" == "preserve" || "$EXISTING_POLICY" == "merge" ]] || die "--existing-policy must be fail, preserve, or merge"
 
 [[ -d "$SOURCE_REPO" ]] || die "Source repository does not exist: $SOURCE_REPO"
@@ -195,6 +205,63 @@ CLIENT_REPO="$(real_dir "$CLIENT_REPO")"
 
 SOURCE_PLATFORM_DIR="$SOURCE_REPO/$PLATFORM"
 [[ -d "$SOURCE_PLATFORM_DIR" ]] || die "Could not find source playbook directory: $SOURCE_PLATFORM_DIR"
+
+detect_universal_project_style() {
+  local repo="$1"
+
+  if [[ -f "$repo/composer.json" ]]; then
+    printf '%s' "php"
+    return
+  fi
+
+  if [[ -f "$repo/pyproject.toml" || -f "$repo/requirements.txt" || -f "$repo/setup.py" ]]; then
+    printf '%s' "python"
+    return
+  fi
+
+  if [[ -f "$repo/package.json" || -f "$repo/pnpm-workspace.yaml" || -f "$repo/yarn.lock" ]]; then
+    if rg -q --glob '**/package.json' '"react-native"|"expo"' "$repo" 2>/dev/null; then
+      printf '%s' "react-native-mono"
+      return
+    fi
+    printf '%s' "node"
+    return
+  fi
+
+  printf '%s' "generic"
+}
+
+is_root_template_file() {
+  case "$1" in
+    _AGENTS.md | _CLAUDE.md | _ARCHITECTURE.md | _SESSION_WORKFLOW.md) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+resolve_source_path() {
+  local source_rel="$1"
+  local default_path="$SOURCE_PLATFORM_DIR/$source_rel"
+
+  if [[ "$PLATFORM" == "universal" ]] && is_root_template_file "$source_rel"; then
+    local style_path="$SOURCE_PLATFORM_DIR/styles/$SELECTED_PROJECT_STYLE/$source_rel"
+    if [[ -e "$style_path" ]]; then
+      printf '%s' "$style_path"
+      return
+    fi
+  fi
+
+  printf '%s' "$default_path"
+}
+
+if [[ "$PLATFORM" == "universal" ]]; then
+  if [[ "$PROJECT_STYLE" == "auto" ]]; then
+    SELECTED_PROJECT_STYLE="$(detect_universal_project_style "$CLIENT_REPO")"
+  else
+    SELECTED_PROJECT_STYLE="$PROJECT_STYLE"
+  fi
+else
+  SELECTED_PROJECT_STYLE="generic"
+fi
 
 GIT_DIR_RAW="$(git -C "$CLIENT_REPO" rev-parse --git-dir 2>/dev/null)" || die "Client path is not a Git repository: $CLIENT_REPO"
 if [[ "$GIT_DIR_RAW" = /* ]]; then
@@ -239,7 +306,7 @@ effective_install_mode() {
 
 for mapping in "${MAPPINGS[@]}"; do
   IFS='|' read -r source_rel dest_rel <<< "$mapping"
-  source_path="$SOURCE_PLATFORM_DIR/$source_rel"
+  source_path="$(resolve_source_path "$source_rel")"
   dest_path="$CLIENT_REPO/$dest_rel"
 
   [[ -e "$source_path" ]] || continue
@@ -264,7 +331,7 @@ touch "$EXCLUDE_FILE"
 
 for mapping in "${MAPPINGS[@]}"; do
   IFS='|' read -r source_rel dest_rel <<< "$mapping"
-  source_path="$SOURCE_PLATFORM_DIR/$source_rel"
+  source_path="$(resolve_source_path "$source_rel")"
   dest_path="$CLIENT_REPO/$dest_rel"
 
   [[ -e "$source_path" ]] || continue
@@ -330,6 +397,9 @@ overlay_gitignore_apply_artifacts "$CLIENT_REPO" "$NAME" "$SOURCE_REPO" \
 overlay_gitignore_apply_platform "$CLIENT_REPO" "$NAME" "$PLATFORM"
 
 printf 'Installed %s overlay into %s using %s mode.\n' "$PLATFORM" "$CLIENT_REPO" "$MODE"
+if [[ "$PLATFORM" == "universal" ]]; then
+  printf 'Selected universal project style: %s\n' "$SELECTED_PROJECT_STYLE"
+fi
 printf 'Existing target policy: %s\n' "$EXISTING_POLICY"
 printf 'Managed state stored at %s\n' "$MANIFEST_PATH"
 printf 'Updated %s/.gitignore (local-artifacts + overlay:%s blocks)\n' "$CLIENT_REPO" "$PLATFORM"

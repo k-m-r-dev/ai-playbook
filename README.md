@@ -31,6 +31,17 @@ ai-playbook/
 
 Start with **`universal`** for new services, web apps, libraries, and pipelines. Use mobile folders when you need stack-specific `ARCHITECTURE.md` and skills.
 
+`universal` now supports style-aware bootstrap via auto-detection:
+
+- `php`
+- `node`
+- `react-native-mono`
+- `python`
+- fallback `generic`
+
+The bootstrap/harness scripts detect style from repository structure by default and pick matching templates.
+Installer also uses this style detection for root `_*.md` templates in `universal/styles/<style>/`.
+
 ## Install into a client repo
 
 ```bash
@@ -45,10 +56,13 @@ Confirm `git status` in the client repo shows **no** staged AI overlay files (pa
 
 ### Installed paths
 
-- `AGENTS.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `SESSION_WORKFLOW.md`
+- `_AGENTS.md`, `_CLAUDE.md`, `_ARCHITECTURE.md`, `_SESSION_WORKFLOW.md` (template files)
+- `AGENTS.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `SESSION_WORKFLOW.md` (wrappers / project-owned files)
 - `.claude/helpers`, `.claude/skills`, `.claude/agents`, `.cursor/rules`, `.cursor/skills`, `.cursor/agents`
 - `.github/agents`, `.github/instructions`, `.github/copilot-instructions.md` (universal)
 - `.workflow/` (always **copied** — project-owned session state)
+
+If wrapper files already exist, installer keeps existing content and prepends `@_...` includes when matching `_` template files are present.
 
 GSD milestone skills (`do-next`, `do-next-runner`, `gsd-plan-milestone`, `gsd-advance-unit`) ship in the overlay. **Runtime** `.gsd/` (workflow rules, idea packages, smoke script) is **not** installed by the overlay alone — run **`bootstrap-gsd-workflow.sh`** (see below). Full adoption guide: **[shared/gsd/README.md](shared/gsd/README.md)**.
 
@@ -62,6 +76,7 @@ These scripts are for **installing and maintaining overlays in local client repo
 - **Does**: copies/symlinks overlay files into the client repo, writes a manifest to `.git/ai-playbook/<platform>.manifest.tsv`, and adds paths to `.git/info/exclude`.
 - **Default mode**: `symlink` (recommended). `.workflow/` is always copied.
 - **Default existing-target policy**: `merge` (safe for existing projects; keeps existing files and only adds missing overlay content).
+- **Universal style selection**: for `--platform universal`, installer auto-detects project style (`php`, `node`, `react-native-mono`, `python`, fallback `generic`) and sources root `_*.md` from `universal/styles/<style>/` when available.
 
 **Example (generic repo — recommended):**
 
@@ -91,6 +106,16 @@ bash scripts/install-client-ai-overlay.sh \
   --client-repo ~/projects/my-service \
   --platform universal \
   --existing-policy fail
+```
+
+**Example (force universal style):**
+
+```bash
+bash scripts/install-client-ai-overlay.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-service \
+  --platform universal \
+  --project-style php
 ```
 
 **Example (mobile-specific overlay):**
@@ -202,6 +227,8 @@ bash scripts/verify-hook-safety.sh
 
 - **Use when**: a client repo has the overlay but needs project-owned GSD runtime (`.gsd/workflow/`, idea packages, smoke script, `DELIVERY-PROFILE.md`).
 - **Does**: copies from `shared/gsd/` into the client repo; optional `--init-gsd`, `--with-do-next`, `--patch-mcp` (writes gsd-workflow into `.mcp.json`).
+- **Auto-detects target stack**: updates `.gsd/DELIVERY-PROFILE.md` with project-appropriate validation commands (for example, Composer/PHP vs Node scripts).
+- **Universal style selection**: for `--platform universal`, auto-selects template pack (`php`, `node`, `react-native-mono`, `python`, `generic`) unless `--project-style` is explicitly set.
 - **Check only**: `--check` reports `.gsd/`, workflow, and MCP readiness without copying.
 
 **Example (recommended after overlay install):**
@@ -233,6 +260,26 @@ bash scripts/add-do-next-to-overlay.sh \
 
 - **Use when**: you changed templates under `shared/gsd/` and need to refresh all platform overlays (`universal`, `ios`, `android`, `flutter-*`).
 - **Does**: re-runs the skill installer across playbook platform folders.
+
+### `scripts/migrate-overlay-wrappers.sh`
+
+- **Use when**: a client overlay still uses legacy root symlink model and you want wrapper + `_` template model.
+- **Does**: migrates root docs to wrapper files and installs `_` template targets for current overlay platform.
+
+### `scripts/patch-client-ai-gitignore.sh`
+
+- **Use when**: existing overlay install is missing committed `.gitignore` managed blocks.
+- **Does**: reapplies managed `.gitignore` blocks from overlay configuration without reinstalling everything.
+
+### `scripts/bootstrap-playbook-wrappers-in-source.sh` (maintainer utility)
+
+- **Use when**: evolving this `ai-playbook` source repo itself from legacy root docs to wrapper + `_` templates.
+- **Does**: one-time/idempotent split of platform root docs into committed wrappers and template files.
+
+### `scripts/update-sync-routing-blocks.py` (maintainer utility)
+
+- **Use when**: syncing routing blocks/comments across wrapper/template files in this source repo.
+- **Does**: updates source-side sync markers; not required for normal client overlay install flow.
 
 ### `shared/gsd/scripts/install-workflow-tools.sh`
 
@@ -304,7 +351,8 @@ This copies `aitools/ios`, `android`, and Flutter variants. **`universal`** is m
 - State under `.git/ai-playbook/<platform>.manifest.tsv`
 - Managed paths in `.git/info/exclude` (local, not committed)
 - Managed blocks in the client **`.gitignore`** (committed — team-wide): runtime artifacts from `config/client-ai-gitignore-artifacts.txt` plus overlay paths per platform
-- Installer refuses to overwrite unmanaged existing paths
+- Default install policy is additive (`--existing-policy merge`): preserve existing unmanaged paths, install missing paths, and merge missing directory entries
+- Strict behavior available with `--existing-policy fail`
 - Already-installed clients: `scripts/patch-client-ai-gitignore.sh`
 
 ## GSD milestone workflow (Cursor, Claude, Copilot)

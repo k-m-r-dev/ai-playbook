@@ -9,6 +9,7 @@ Usage:
     --source-repo /path/to/ai-playbook \
     --client-repo /path/to/client \
     [--platform universal|ios|android|flutter-riverpod|flutter-bloc] \
+    [--project-style auto|php|node|react-native-mono|python|generic] \
     [--harness-context] [--init-gsd] [--with-do-next] [--patch-mcp] [--force] [--check]
 
 Copies project-owned .gsd/workflow, idea packages, smoke script, DELIVERY-PROFILE template.
@@ -22,6 +23,7 @@ die() { printf 'Error: %s\n' "$1" >&2; exit 1; }
 SOURCE_REPO=""
 CLIENT_REPO=""
 PLATFORM=""
+PROJECT_STYLE="auto"
 INIT_GSD=0
 WITH_DO_NEXT=0
 PATCH_MCP=0
@@ -34,6 +36,7 @@ while [[ $# -gt 0 ]]; do
     --source-repo) SOURCE_REPO="$2"; shift 2 ;;
     --client-repo) CLIENT_REPO="$2"; shift 2 ;;
     --platform) PLATFORM="$2"; shift 2 ;;
+    --project-style) PROJECT_STYLE="$2"; shift 2 ;;
     --harness-context) HARNESS_CONTEXT=1; shift ;;
     --init-gsd) INIT_GSD=1; shift ;;
     --with-do-next) WITH_DO_NEXT=1; shift ;;
@@ -57,6 +60,52 @@ SHARED="$SOURCE_REPO/shared/gsd"
 
 status() { printf '[%s] %s\n' "$1" "$2"; }
 
+detect_universal_project_style() {
+  local repo="$1"
+
+  if [[ -f "$repo/composer.json" ]]; then
+    printf '%s\n' "php"
+    return
+  fi
+
+  if [[ -f "$repo/pyproject.toml" || -f "$repo/requirements.txt" || -f "$repo/setup.py" ]]; then
+    printf '%s\n' "python"
+    return
+  fi
+
+  if [[ -f "$repo/package.json" || -f "$repo/pnpm-workspace.yaml" || -f "$repo/yarn.lock" ]]; then
+    if rg -q --glob '**/package.json' '"react-native"|"expo"' "$repo" 2>/dev/null; then
+      printf '%s\n' "react-native-mono"
+      return
+    fi
+    printf '%s\n' "node"
+    return
+  fi
+
+  printf '%s\n' "generic"
+}
+
+select_delivery_template() {
+  local platform="$1"
+  local style="$2"
+
+  if [[ "$platform" != "universal" ]]; then
+    printf '%s\n' "$SHARED/templates/platforms/$platform/DELIVERY-PROFILE.md"
+    return
+  fi
+
+  if [[ "$style" == "auto" ]]; then
+    style="$(detect_universal_project_style "$CLIENT_REPO")"
+  fi
+
+  local candidate="$SHARED/templates/platforms/universal/$style/DELIVERY-PROFILE.md"
+  if [[ -f "$candidate" ]]; then
+    printf '%s\n' "$candidate"
+  else
+    printf '%s\n' "$SHARED/templates/platforms/universal/DELIVERY-PROFILE.md"
+  fi
+}
+
 remove_block() {
   local file="$1"
   local begin="$2"
@@ -71,133 +120,105 @@ remove_block() {
   mv "$temp_file" "$file"
 }
 
-inject_universal_prettier_validation() {
+inject_project_validation_block() {
   local profile="$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md"
-  local pkg="$CLIENT_REPO/package.json"
-  local begin="<!-- BEGIN AUTO:PRETTIER-VALIDATION -->"
-  local end="<!-- END AUTO:PRETTIER-VALIDATION -->"
-  local package_manager="npm"
-  local cmd_prefix="npm run"
-  local check_cmd=""
-  local fix_cmd=""
-  local check_script=""
-  local fix_script=""
-  local node_out=""
-  local had_failure=0
+  local begin="<!-- BEGIN AUTO:PROJECT-VALIDATION -->"
+  local end="<!-- END AUTO:PROJECT-VALIDATION -->"
+  local ecosystem="generic"
+  local note="Auto-detected from repository markers."
+  local cmds=()
+  local pm="npm"
 
-  [[ "$PLATFORM" == "universal" ]] || return 0
   [[ -f "$profile" ]] || return 0
-  [[ -f "$pkg" ]] || return 0
-  command -v node >/dev/null 2>&1 || return 0
 
-  if [[ -f "$CLIENT_REPO/pnpm-lock.yaml" ]]; then
-    package_manager="pnpm"
-    cmd_prefix="pnpm"
-  elif [[ -f "$CLIENT_REPO/yarn.lock" ]]; then
-    package_manager="yarn"
-    cmd_prefix="yarn"
-  elif [[ -f "$CLIENT_REPO/bun.lock" || -f "$CLIENT_REPO/bun.lockb" ]]; then
-    package_manager="bun"
-    cmd_prefix="bun run"
-  fi
+  if [[ -f "$CLIENT_REPO/composer.json" ]]; then
+    ecosystem="php-composer"
+    note="Detected PHP/Composer repository."
 
-  node_out="$(node - "$pkg" <<'NODE'
-const fs = require('fs');
-const pkgPath = process.argv[2];
-const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-const scripts = pkg.scripts || {};
-const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
-const keys = Object.keys(scripts);
-
-const checkByName = ['prettier:check', 'check:prettier', 'lint:prettier', 'format:check:prettier'];
-const fixByName = ['prettier:write', 'write:prettier', 'format:prettier'];
-
-let check = checkByName.find((k) => keys.includes(k)) || '';
-let fix = fixByName.find((k) => keys.includes(k)) || '';
-
-if (!check) {
-  check = keys.find((k) => {
-    const v = String(scripts[k] || '').toLowerCase();
-    return v.includes('prettier') && v.includes('--check');
-  }) || '';
-}
-
-if (!fix) {
-  fix = keys.find((k) => {
-    const v = String(scripts[k] || '').toLowerCase();
-    return v.includes('prettier') && (v.includes('--write') || !v.includes('--check'));
-  }) || '';
-}
-
-const hasPrettier = Boolean(deps.prettier || check || fix);
-if (!hasPrettier) {
-  process.exit(10);
-}
-
-console.log(check);
-console.log(fix);
-NODE
-  )" || return 0
-
-  mapfile -t _prettier_lines <<< "$node_out"
-  check_script="${_prettier_lines[0]:-}"
-  fix_script="${_prettier_lines[1]:-}"
-
-  if [[ -n "$check_script" ]]; then
-    check_cmd="$cmd_prefix $check_script"
-  else
-    case "$package_manager" in
-      npm) check_cmd="npm exec -- prettier --check --ignore-unknown src test tests __tests__ ." ;;
-      yarn) check_cmd="yarn prettier --check --ignore-unknown src test tests __tests__ ." ;;
-      pnpm) check_cmd="pnpm exec prettier --check --ignore-unknown src test tests __tests__ ." ;;
-      bun) check_cmd="bunx prettier --check --ignore-unknown src test tests __tests__ ." ;;
-    esac
-  fi
-
-  if [[ -n "$fix_script" ]]; then
-    fix_cmd="$cmd_prefix $fix_script"
-  else
-    case "$package_manager" in
-      npm) fix_cmd="npm exec -- prettier --write --ignore-unknown src test tests __tests__ ." ;;
-      yarn) fix_cmd="yarn prettier --write --ignore-unknown src test tests __tests__ ." ;;
-      pnpm) fix_cmd="pnpm exec prettier --write --ignore-unknown src test tests __tests__ ." ;;
-      bun) fix_cmd="bunx prettier --write --ignore-unknown src test tests __tests__ ." ;;
-    esac
-  fi
-
-  if ! (cd "$CLIENT_REPO" && eval "$check_cmd"); then
-    had_failure=1
-    status "AUTO" "prettier check failed; attempting auto-fix"
-    if (cd "$CLIENT_REPO" && eval "$fix_cmd"); then
-      if ! (cd "$CLIENT_REPO" && eval "$check_cmd"); then
-        status "WARN" "prettier check still failing after auto-fix"
-      else
-        status "AUTO" "prettier check passed after auto-fix"
-      fi
-    else
-      status "WARN" "prettier auto-fix command failed"
+    if grep -q '"test"[[:space:]]*:' "$CLIENT_REPO/composer.json" 2>/dev/null; then
+      cmds+=("composer test")
+    elif [[ -x "$CLIENT_REPO/vendor/bin/phpunit" ]]; then
+      cmds+=("vendor/bin/phpunit")
+    elif [[ -f "$CLIENT_REPO/phpunit.xml" || -f "$CLIENT_REPO/phpunit.xml.dist" ]]; then
+      cmds+=("./vendor/bin/phpunit")
     fi
+
+    if grep -q '"lint"[[:space:]]*:' "$CLIENT_REPO/composer.json" 2>/dev/null; then
+      cmds+=("composer lint")
+    elif [[ -x "$CLIENT_REPO/vendor/bin/phpcs" ]]; then
+      cmds+=("vendor/bin/phpcs")
+    fi
+
+    if grep -q '"phpstan"[[:space:]]*:' "$CLIENT_REPO/composer.json" 2>/dev/null; then
+      cmds+=("composer phpstan")
+    elif [[ -x "$CLIENT_REPO/vendor/bin/phpstan" ]]; then
+      cmds+=("vendor/bin/phpstan analyse")
+    fi
+  elif [[ -f "$CLIENT_REPO/package.json" ]]; then
+    ecosystem="node"
+    note="Detected Node/JS repository."
+
+    if [[ -f "$CLIENT_REPO/pnpm-lock.yaml" ]]; then
+      pm="pnpm"
+    elif [[ -f "$CLIENT_REPO/yarn.lock" ]]; then
+      pm="yarn"
+    elif [[ -f "$CLIENT_REPO/bun.lock" || -f "$CLIENT_REPO/bun.lockb" ]]; then
+      pm="bun"
+    fi
+
+    if grep -q '"test"[[:space:]]*:' "$CLIENT_REPO/package.json" 2>/dev/null; then
+      case "$pm" in
+        npm) cmds+=("npm test") ;;
+        pnpm) cmds+=("pnpm test") ;;
+        yarn) cmds+=("yarn test") ;;
+        bun) cmds+=("bun test") ;;
+      esac
+    fi
+
+    if grep -q '"lint"[[:space:]]*:' "$CLIENT_REPO/package.json" 2>/dev/null; then
+      case "$pm" in
+        npm) cmds+=("npm run lint") ;;
+        pnpm) cmds+=("pnpm lint") ;;
+        yarn) cmds+=("yarn lint") ;;
+        bun) cmds+=("bun run lint") ;;
+      esac
+    fi
+
+    if grep -q '"typecheck"[[:space:]]*:' "$CLIENT_REPO/package.json" 2>/dev/null; then
+      case "$pm" in
+        npm) cmds+=("npm run typecheck") ;;
+        pnpm) cmds+=("pnpm typecheck") ;;
+        yarn) cmds+=("yarn typecheck") ;;
+        bun) cmds+=("bun run typecheck") ;;
+      esac
+    fi
+  elif [[ -f "$CLIENT_REPO/Makefile" ]]; then
+    ecosystem="make"
+    note="Detected Makefile-driven repository."
+    grep -Eq '^test:' "$CLIENT_REPO/Makefile" 2>/dev/null && cmds+=("make test")
+    grep -Eq '^lint:' "$CLIENT_REPO/Makefile" 2>/dev/null && cmds+=("make lint")
+  fi
+
+  if [[ "${#cmds[@]}" -eq 0 ]]; then
+    cmds+=("# TODO: add project verification commands")
   fi
 
   remove_block "$profile" "$begin" "$end"
 
   {
     printf '\n%s\n' "$begin"
-    printf '## Validation (auto-detected Prettier)\n\n'
-    printf 'Run Prettier for JS/RN source + test files as part of verification.\n\n'
+    printf '## Validation (auto-detected project setup)\n\n'
+    printf '> %s\n' "$note"
+    printf '> Detected ecosystem: `%s`\n\n' "$ecosystem"
     printf '```bash\n'
-    printf '%s\n' "$check_cmd"
-    printf '%s\n' "$fix_cmd"
-    printf '%s\n' "$check_cmd"
-    printf '```\n\n'
-    if [[ "$had_failure" == "1" ]]; then
-      printf '_Bootstrap attempted auto-fix because check failed during setup._\n\n'
-    fi
-    printf '> Commands were auto-selected for this repo package manager (%s).\n' "$package_manager"
+    for cmd in "${cmds[@]}"; do
+      printf '%s\n' "$cmd"
+    done
+    printf '```\n'
     printf '%s\n' "$end"
   } >> "$profile"
 
-  status "AUTO" ".gsd/DELIVERY-PROFILE.md prettier validation block"
+  status "AUTO" ".gsd/DELIVERY-PROFILE.md project validation block"
 }
 
 HAS_GSD=0
@@ -236,9 +257,10 @@ copy_tree "$SHARED/workflow" "$CLIENT_REPO/.gsd/workflow"
 
 if [[ ! -f "$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md" || "$FORCE" == 1 ]]; then
   delivery_tpl="$SHARED/templates/DELIVERY-PROFILE.md"
-  if [[ -n "$PLATFORM" && -f "$SHARED/templates/platforms/$PLATFORM/DELIVERY-PROFILE.md" ]]; then
-    delivery_tpl="$SHARED/templates/platforms/$PLATFORM/DELIVERY-PROFILE.md"
+  if [[ -n "$PLATFORM" ]]; then
+    delivery_tpl="$(select_delivery_template "$PLATFORM" "$PROJECT_STYLE")"
   fi
+  status "AUTO" "delivery template: ${delivery_tpl#$SOURCE_REPO/}"
   cp "$delivery_tpl" "$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md"
   status "COPY" ".gsd/DELIVERY-PROFILE.md"
 fi
@@ -248,7 +270,7 @@ if [[ ! -f "$CLIENT_REPO/.gsd/DECISIONS.md" ]]; then
   status "COPY" ".gsd/DECISIONS.md"
 fi
 
-inject_universal_prettier_validation
+inject_project_validation_block
 
 if [[ "$WITH_DO_NEXT" == 1 ]]; then
   copy_tree "$SHARED/idea/do-next" "$CLIENT_REPO/.gsd/idea/do-next"
@@ -295,6 +317,7 @@ if [[ "$HARNESS_CONTEXT" == 1 ]]; then
   HARNESS="$SHARED/scripts/harness-gsd-project-context.sh"
   [[ -x "$HARNESS" ]] || chmod +x "$HARNESS"
   harness_args=(--source-repo "$SOURCE_REPO" --client-repo "$CLIENT_REPO" --platform "$PLATFORM")
+  harness_args+=(--project-style "$PROJECT_STYLE")
   [[ "$FORCE" == 1 ]] && harness_args+=(--force)
   bash "$HARNESS" "${harness_args[@]}"
 fi

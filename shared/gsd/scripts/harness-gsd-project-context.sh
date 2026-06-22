@@ -9,6 +9,7 @@ Usage:
     --source-repo /path/to/ai-playbook \
     --client-repo /path/to/client \
     --platform universal|ios|android|flutter-riverpod|flutter-bloc \
+    [--project-style auto|php|node|react-native-mono|python|generic] \
     [--force] [--dry-run]
 
 Copies harness templates from shared/gsd/templates/platforms/<platform>/ into:
@@ -25,6 +26,7 @@ die() { printf 'Error: %s\n' "$1" >&2; exit 1; }
 SOURCE_REPO=""
 CLIENT_REPO=""
 PLATFORM=""
+PROJECT_STYLE="auto"
 FORCE=0
 DRY_RUN=0
 
@@ -33,6 +35,7 @@ while [[ $# -gt 0 ]]; do
     --source-repo) SOURCE_REPO="$2"; shift 2 ;;
     --client-repo) CLIENT_REPO="$2"; shift 2 ;;
     --platform) PLATFORM="$2"; shift 2 ;;
+    --project-style) PROJECT_STYLE="$2"; shift 2 ;;
     --force) FORCE=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     -h|--help) usage; exit 0 ;;
@@ -53,6 +56,52 @@ OVERLAY="$SOURCE_REPO/$PLATFORM"
 [[ -d "$PACK" || -d "$OVERLAY" ]] || die "no harness pack or overlay for platform: $PLATFORM"
 
 status() { printf '[%s] %s\n' "$1" "$2"; }
+
+detect_universal_project_style() {
+  local repo="$1"
+
+  if [[ -f "$repo/composer.json" ]]; then
+    printf '%s\n' "php"
+    return
+  fi
+
+  if [[ -f "$repo/pyproject.toml" || -f "$repo/requirements.txt" || -f "$repo/setup.py" ]]; then
+    printf '%s\n' "python"
+    return
+  fi
+
+  if [[ -f "$repo/package.json" || -f "$repo/pnpm-workspace.yaml" || -f "$repo/yarn.lock" ]]; then
+    if rg -q --glob '**/package.json' '"react-native"|"expo"' "$repo" 2>/dev/null; then
+      printf '%s\n' "react-native-mono"
+      return
+    fi
+    printf '%s\n' "node"
+    return
+  fi
+
+  printf '%s\n' "generic"
+}
+
+style_pack_path() {
+  local platform="$1"
+  local style="$2"
+
+  if [[ "$platform" != "universal" ]]; then
+    printf '%s\n' "$SHARED/templates/platforms/$platform"
+    return
+  fi
+
+  if [[ "$style" == "auto" ]]; then
+    style="$(detect_universal_project_style "$CLIENT_REPO")"
+  fi
+
+  local candidate="$SHARED/templates/platforms/universal/$style"
+  if [[ -d "$candidate" ]]; then
+    printf '%s\n' "$candidate"
+  else
+    printf '%s\n' "$SHARED/templates/platforms/universal"
+  fi
+}
 
 copy_if() {
   local src="$1" dest="$2"
@@ -80,6 +129,9 @@ resolve_src() {
     printf '%s\n' "$OVERLAY/.cursor/skills/do-next/$name"
   fi
 }
+
+PACK="$(style_pack_path "$PLATFORM" "$PROJECT_STYLE")"
+status "AUTO" "template pack: ${PACK#$SOURCE_REPO/}"
 
 mkdir -p "$CLIENT_REPO/.gsd" "$CLIENT_REPO/.cursor/skills"
 
