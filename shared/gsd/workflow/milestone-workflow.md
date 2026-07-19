@@ -22,7 +22,7 @@ Planning terms — not required in PR titles unless the team agrees.
 
 **External tickets** (Jira, Linear, GitHub Issue, etc.) are **optional**. Never block execution waiting for a tracker ticket.
 
-When using **GSD**, plans live under `.gsd/milestones/M###/`. Other planning layouts are fine if the Required Milestone Map is complete.
+When using **GSD**, plans live under GSD's own internal layout — currently `.gsd/phases/NN-<slug>/`, previously `.gsd/milestones/M###/slices/S##/` before GSD's v2 schema migration. Don't hardcode this path; GSD's on-disk layout has changed once already and may change again. Resolve the current layout via `.gsd/.compat.json` or the `gsd_*` tools, and refer to entities by their stable DB identifiers (`M001`, `S01`, `T01`) rather than by file path. Other planning layouts are fine if the Required Milestone Map is complete.
 
 ---
 

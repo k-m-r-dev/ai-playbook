@@ -130,11 +130,13 @@ Do not start milestone `M002` until `M001` meets its completion condition (merge
 
 ## GSD Mapping (optional convention)
 
+GSD's on-disk file layout is an internal implementation detail and has already changed once (nested `milestones/M001/slices/S01/` → flat `phases/01-<slug>/`, with tasks moving from separate files to inline checkboxes). Don't hardcode filenames in skills or workflow docs — refer to entities by their stable DB identifiers instead, and resolve current file paths via `.gsd/.compat.json` (the ground truth for what path each entity currently projects to) or the `gsd_*` tools when a specific file needs to be read or shown directly.
+
 | Artifact | Workflow term |
 | --- | --- |
-| `M###-ROADMAP.md` | Milestone / workstream map |
-| `S##-PLAN.md` | Slice |
-| Task in slice plan / `T##-PLAN.md` | Task |
+| Milestone/phase roadmap file | Milestone / workstream map (`M001`) |
+| Slice plan file | Slice (`M001/S01`) |
+| Task within a slice plan | Task (`M001/S01/T01`) |
 | `.gsd/DECISIONS.md` | Durable planning decisions |
 
 GSD is optional; any planning layout works if the Required Milestone Map is complete.

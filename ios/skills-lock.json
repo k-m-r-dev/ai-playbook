@@ -1,60 +1,108 @@
 {
-    "version": 1,
-    "skills": {
-        "ios-architecture": {
-            "source": "local-template/ios-architecture",
-            "sourceType": "local",
-            "computedHash": "template-v1-ios-architecture"
-        },
-        "native-ios-architecture": {
-            "source": "local-template/native-ios-architecture",
-            "sourceType": "local",
-            "computedHash": "template-v1-native-ios-architecture"
-        },
-        "native-data-fetching": {
-            "source": "local-template/native-data-fetching",
-            "sourceType": "local",
-            "computedHash": "template-v1-native-data-fetching"
-        },
-        "security-and-privacy": {
-            "source": "local-template/security-and-privacy",
-            "sourceType": "local",
-            "computedHash": "template-v1-security-and-privacy"
-        },
-        "apple-platform-quality": {
-            "source": "local-template/apple-platform-quality",
-            "sourceType": "local",
-            "computedHash": "template-v1-apple-platform-quality"
-        },
-        "session-progress-workflow": {
-            "source": "local-template/session-progress-workflow",
-            "sourceType": "local",
-            "computedHash": "template-v1-session-progress-workflow"
-        },
-        "architecture-playbook": {
-            "source": "local-template/architecture-playbook",
-            "sourceType": "local",
-            "computedHash": "template-v1-architecture-playbook"
-        },
-        "gsd-plan-milestone": {
-            "source": "local-template/gsd-plan-milestone",
-            "sourceType": "local",
-            "computedHash": "template-v1-gsd-plan-milestone"
-        },
-        "gsd-advance-unit": {
-            "source": "local-template/gsd-advance-unit",
-            "sourceType": "local",
-            "computedHash": "template-v1-gsd-advance-unit"
-        },
-        "do-next": {
-            "source": "local-template/do-next",
-            "sourceType": "local",
-            "computedHash": "template-v1-do-next"
-        },
-        "do-next-runner": {
-            "source": "local-template/do-next-runner",
-            "sourceType": "local",
-            "computedHash": "template-v1-do-next-runner"
-        }
+  "version": 1,
+  "skills": {
+    "apple-platform-quality": {
+      "source": "local-template/apple-platform-quality",
+      "sourceType": "local",
+      "computedHash": "template-v1-apple-platform-quality"
+    },
+    "architecture-playbook": {
+      "source": "local-template/architecture-playbook",
+      "sourceType": "local",
+      "computedHash": "template-v1-architecture-playbook"
+    },
+    "code-review-excellence": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/developer-essentials/skills/code-review-excellence/SKILL.md",
+      "computedHash": "0f585a4ad2f6d8353069ca9051c6f0e8865abb9d3a6a268d423784c3c3852962"
+    },
+    "do-next": {
+      "source": "local-template/do-next",
+      "sourceType": "local",
+      "computedHash": "template-v1-do-next"
+    },
+    "do-next-runner": {
+      "source": "local-template/do-next-runner",
+      "sourceType": "local",
+      "computedHash": "template-v1-do-next-runner"
+    },
+    "docx": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/docx/SKILL.md",
+      "computedHash": "6962db07127ee540a56e4677f65576d0727668a1d67f7da8bc978f10791c2bfe"
+    },
+    "error-handling-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/developer-essentials/skills/error-handling-patterns/SKILL.md",
+      "computedHash": "73f0570edd3ddc740ba5411932a67954df375530bbffbe7fa0cecd8e59b0711e"
+    },
+    "git-advanced-workflows": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/developer-essentials/skills/git-advanced-workflows/SKILL.md",
+      "computedHash": "f4d0569096237c09b1c07896770fe487d7224c549f7aab0c6551a4f330fcf160"
+    },
+    "gsd-advance-unit": {
+      "source": "local-template/gsd-advance-unit",
+      "sourceType": "local",
+      "computedHash": "template-v1-gsd-advance-unit"
+    },
+    "gsd-plan-milestone": {
+      "source": "local-template/gsd-plan-milestone",
+      "sourceType": "local",
+      "computedHash": "template-v1-gsd-plan-milestone"
+    },
+    "ios-architecture": {
+      "source": "local-template/ios-architecture",
+      "sourceType": "local",
+      "computedHash": "template-v1-ios-architecture"
+    },
+    "native-data-fetching": {
+      "source": "local-template/native-data-fetching",
+      "sourceType": "local",
+      "computedHash": "template-v1-native-data-fetching"
+    },
+    "native-ios-architecture": {
+      "source": "local-template/native-ios-architecture",
+      "sourceType": "local",
+      "computedHash": "template-v1-native-ios-architecture"
+    },
+    "pdf": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/pdf/SKILL.md",
+      "computedHash": "cfbc539377088ca7e44a813b30c306327385bbd973cd7a721e1743f60837dd62"
+    },
+    "pptx": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/pptx/SKILL.md",
+      "computedHash": "6b8b859d26f93aa059c9870d1ab76b44ab69e3d6757ce4a03cc94cb760888073"
+    },
+    "security-and-privacy": {
+      "source": "local-template/security-and-privacy",
+      "sourceType": "local",
+      "computedHash": "template-v1-security-and-privacy"
+    },
+    "session-progress-workflow": {
+      "source": "local-template/session-progress-workflow",
+      "sourceType": "local",
+      "computedHash": "template-v1-session-progress-workflow"
+    },
+    "skill-creator": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/skill-creator/SKILL.md",
+      "computedHash": "5ea13a6d9f0d4bb694405d79acd00cadec0d21bb138c4dd10fcf3c500cb835c2"
+    },
+    "xlsx": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/xlsx/SKILL.md",
+      "computedHash": "efd0c8011cf0677d8075cf93867ecec804f9a8754a777e1d2fdb46197e9c247f"
     }
+  }
 }

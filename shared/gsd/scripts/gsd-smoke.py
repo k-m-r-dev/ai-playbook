@@ -2,7 +2,15 @@
 """Dry-run smoke checks for GSD milestone workflow (no product code changes).
 
 Validates:
-  1. Plan coherence — total tasks (md/db/files) and pending tasks (md unchecked vs DB)
+  1. Plan coherence — total tasks (md/db/files) and pending tasks (md unchecked vs DB).
+     Slice plan files are resolved for both GSD layouts:
+       - schema > 1 / phase: `.gsd/phases/NN-<slug>/NN-SS-PLAN.md`
+         (compat entity projections when present; otherwise filesystem
+         discovery from ROADMAP / `phases/{NN}-*` — keeps new milestones
+         coherent before slice plans are fully indexed in `.compat.json`)
+       - schema ≤ 1 / legacy: `.gsd/milestones/M###/slices/S##/S##-PLAN.md`
+     Prefer the layout implied by `.compat.json` `schema`, then fall back
+     to whichever layout exists on disk.
   2. Gate-evaluate readiness — Q3/Q4 status for the active slice
   3. STATE.md sync — detects stale phase when DB gates are done but STATE lags
 
@@ -87,16 +95,175 @@ def parse_active_id(value: str) -> str | None:
     return match.group(1) if match else None
 
 
+# Matches both "- [ ] **T01:** Title" (colon inside the bold run) and the
+# current gsd-pi renderer's "- [ ] **T01**: Title" (closing ** before the
+# colon) — markdown-renderer.js line ~369 emits the latter.
+TASK_LINE_RE = r"- \[[ x]\] \*\*(T\d+)\*{0,2}:"
+TASK_LINE_PENDING_RE = r"- \[ \] \*\*(T\d+)\*{0,2}:"
+
+
 def markdown_slice_all_tasks(plan_path: Path) -> list[str]:
     """All task IDs listed in slice plan (checked or unchecked)."""
     text = plan_path.read_text(encoding="utf-8")
-    return re.findall(r"- \[[ x]\] \*\*(T\d+):", text)
+    return re.findall(TASK_LINE_RE, text)
 
 
 def markdown_slice_pending_tasks(plan_path: Path) -> list[str]:
     """Task IDs with unchecked boxes in slice plan."""
     text = plan_path.read_text(encoding="utf-8")
-    return re.findall(r"- \[ \] \*\*(T\d+):", text)
+    return re.findall(TASK_LINE_PENDING_RE, text)
+
+
+def load_compat(gsd_dir: Path) -> dict:
+    """Load `.gsd/.compat.json` if present; empty dict otherwise."""
+    compat_path = gsd_dir / ".compat.json"
+    if not compat_path.is_file():
+        return {}
+    try:
+        data = json.loads(compat_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def milestone_nn(milestone_id: str) -> str | None:
+    """M008 → '08', M1 → '01'."""
+    match = re.match(r"M(\d+)$", milestone_id)
+    if not match:
+        return None
+    return f"{int(match.group(1)):02d}"
+
+
+def slice_ss(slice_id: str) -> str | None:
+    """S01 → '01'."""
+    match = re.match(r"S(\d+)$", slice_id)
+    if not match:
+        return None
+    return f"{int(match.group(1)):02d}"
+
+
+def find_phase_dir_for_milestone(gsd_dir: Path, milestone_id: str, compat: dict) -> Path | None:
+    """Locate `.gsd/phases/NN-<slug>/` for a milestone.
+
+    Order:
+      1. `.compat.json` projection tagged with the milestone id under phases/
+      2. Filesystem directories matching `phases/{NN}-*` (schema ≥ 2 naming)
+    """
+    for rel_path, meta in compat.get("projections", {}).items():
+        if not isinstance(rel_path, str) or not rel_path.startswith("phases/"):
+            continue
+        entities = meta.get("entities", []) if isinstance(meta, dict) else []
+        if milestone_id not in entities:
+            continue
+        # phases/08-alerts-.../08-ROADMAP.md → phases/08-alerts-...
+        parts = Path(rel_path).parts
+        if len(parts) >= 2:
+            phase_dir = gsd_dir / parts[0] / parts[1]
+            if phase_dir.is_dir():
+                return phase_dir
+
+    nn = milestone_nn(milestone_id)
+    phases_root = gsd_dir / "phases"
+    if nn and phases_root.is_dir():
+        matches = sorted(p for p in phases_root.glob(f"{nn}-*") if p.is_dir())
+        if matches:
+            return matches[0]
+    return None
+
+
+def find_phase_slice_plan(
+    gsd_dir: Path, milestone_id: str, slice_id: str, compat: dict
+) -> Path | None:
+    """Resolve schema ≥ 2 slice plan: `phases/NN-slug/NN-SS-PLAN.md`.
+
+    Supports incomplete compat projections (e.g. only ROADMAP registered for a
+    new milestone) by discovering the phase directory + flat plan filename.
+    """
+    entity = f"{milestone_id}/{slice_id}"
+
+    # 1) Exact entity projection to a *-PLAN.md under phases/
+    for rel_path, meta in compat.get("projections", {}).items():
+        if not isinstance(rel_path, str) or not rel_path.startswith("phases/"):
+            continue
+        if not rel_path.endswith("-PLAN.md"):
+            continue
+        entities = meta.get("entities", []) if isinstance(meta, dict) else []
+        if entity not in entities:
+            continue
+        candidate = gsd_dir / rel_path
+        if candidate.is_file():
+            return candidate
+
+    # 2) Filesystem: phase dir + NN-SS-PLAN.md (current GSD render format)
+    nn = milestone_nn(milestone_id)
+    ss = slice_ss(slice_id)
+    if not nn or not ss:
+        return None
+
+    phase_dir = find_phase_dir_for_milestone(gsd_dir, milestone_id, compat)
+    if phase_dir is None:
+        return None
+
+    candidate = phase_dir / f"{nn}-{ss}-PLAN.md"
+    if candidate.is_file():
+        return candidate
+
+    # Loose fallback: any *-{SS}-PLAN.md in the phase dir
+    loose = sorted(phase_dir.glob(f"*-{ss}-PLAN.md"))
+    return loose[0] if loose else None
+
+
+def find_legacy_slice_plan(gsd_dir: Path, milestone_id: str, slice_id: str) -> Path | None:
+    """Resolve legacy slice plan: `milestones/M###/slices/S##/S##-PLAN.md`."""
+    legacy = (
+        gsd_dir / "milestones" / milestone_id / "slices" / slice_id / f"{slice_id}-PLAN.md"
+    )
+    return legacy if legacy.is_file() else None
+
+
+def resolve_slice_plan(
+    gsd_dir: Path, milestone_id: str, slice_id: str
+) -> tuple[Path | None, str]:
+    """Resolve a slice's plan file across GSD's on-disk layouts.
+
+    GSD layouts in the wild:
+      - schema ≥ 2 (phase): `.gsd/phases/NN-<slug>/NN-SS-PLAN.md`
+      - schema 1 / legacy: `.gsd/milestones/M###/slices/S##/S##-PLAN.md`
+
+    Behavior:
+      - Read `.gsd/.compat.json` `schema` when present (default 1).
+      - Detect **both** layouts on disk for the requested slice.
+      - Prefer phase when `schema > 1`, legacy when `schema <= 1`.
+      - If the preferred layout is missing, fall back to the other when it
+        exists (projects can keep both trees during migration).
+      - Phase discovery does not require a complete compat projection for
+        every slice — ROADMAP-only / incomplete projections still resolve
+        via `phases/{NN}-*/{NN}-{SS}-PLAN.md` on disk (as with M008).
+
+    Returns (path, layout) where layout is "phase", "legacy", or "missing"
+    (path is None only when layout == "missing").
+    """
+    compat = load_compat(gsd_dir)
+    try:
+        schema = int(compat.get("schema", 1))
+    except (TypeError, ValueError):
+        schema = 1
+
+    phase_plan = find_phase_slice_plan(gsd_dir, milestone_id, slice_id, compat)
+    legacy_plan = find_legacy_slice_plan(gsd_dir, milestone_id, slice_id)
+
+    if schema > 1:
+        if phase_plan is not None:
+            return phase_plan, "phase"
+        if legacy_plan is not None:
+            return legacy_plan, "legacy"
+    else:
+        if legacy_plan is not None:
+            return legacy_plan, "legacy"
+        if phase_plan is not None:
+            return phase_plan, "phase"
+
+    return None, "missing"
 
 
 def db_slice_task_counts(conn: sqlite3.Connection, milestone_id: str) -> dict[str, int]:
@@ -220,7 +387,6 @@ def run_smoke(repo_root: Path, milestone_id: str, rebuild: bool) -> Report:
     gsd_dir = repo_root / ".gsd"
     db_path = gsd_dir / "gsd.db"
     state_path = gsd_dir / "STATE.md"
-    milestone_dir = gsd_dir / "milestones" / milestone_id
 
     node_path = read_mcp_node(repo_root)
     if node_path is None:
@@ -266,24 +432,37 @@ def run_smoke(repo_root: Path, milestone_id: str, rebuild: bool) -> Report:
         print_coherence: list[str] = []
 
         for slice_id in SLICE_IDS:
-            plan_path = milestone_dir / "slices" / slice_id / f"{slice_id}-PLAN.md"
-            tasks_dir = milestone_dir / "slices" / slice_id / "tasks"
+            plan_path, layout = resolve_slice_plan(gsd_dir, milestone_id, slice_id)
             md_total = 0
             md_pending_count = 0
-            if plan_path.is_file():
+            if plan_path is not None:
                 md_total = len(markdown_slice_all_tasks(plan_path))
                 md_pending_count = len(markdown_slice_pending_tasks(plan_path))
-            file_count = len(list(tasks_dir.glob("T*-PLAN.md"))) if tasks_dir.is_dir() else 0
+
+            file_count: int | None
+            if layout == "phase":
+                # Flat-phase layout embeds tasks as checkboxes inside the
+                # slice plan file; no per-task tasks/ dir is ever created
+                # (paths.js: "task plans are checkboxes inside the slice
+                # plan file"), so the per-file count is not applicable.
+                file_count = None
+            elif layout == "legacy":
+                tasks_dir = plan_path.parent / "tasks"
+                file_count = len(list(tasks_dir.glob("T*-PLAN.md"))) if tasks_dir.is_dir() else 0
+            else:  # "missing" — no plan file resolved at all
+                file_count = 0
+
             db_count = db_counts.get(slice_id, 0)
             db_pending_count = db_pending.get(slice_id, 0)
 
-            total_ok = md_total == db_count == file_count
+            total_ok = md_total == db_count and (file_count is None or file_count == db_count)
             pending_ok = md_pending_count == db_pending_count
             slice_ok = total_ok and pending_ok
             total_status = "OK" if total_ok else "DRIFT"
             pending_status = "OK" if pending_ok else "DRIFT"
+            files_display = "n/a" if file_count is None else str(file_count)
             print_coherence.append(
-                f"{slice_id}: total md={md_total} db={db_count} files={file_count} {total_status}; "
+                f"{slice_id}[{layout}]: total md={md_total} db={db_count} files={files_display} {total_status}; "
                 f"pending md={md_pending_count} db={db_pending_count} {pending_status}"
             )
             if not slice_ok:

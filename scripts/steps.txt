@@ -1,0 +1,53 @@
+Step-by-step to make it properly configured
+
+1. Install managed overlay in additive mode (safe for existing files)
+Run this:
+
+    scripts/install-client-ai-overlay.sh \
+      --source-repo /Users/khandkermahmudur/Workspace/self/ai-playbook \
+      --client-repo /Users/khandkermahmudur/Workspace/fieldnation/fieldnation_ui \
+      --platform universal \
+      --existing-policy merge \
+      --project-style auto
+
+Expected outcome:
+- _AGENTS.md, _CLAUDE.md, _ARCHITECTURE.md, _SESSION_WORKFLOW.md are installed (symlink mode default).
+- Existing AGENTS.md / CLAUDE.md are preserved.
+- @_... includes are prepended where applicable.
+- Installer state manifest is created in .git/ai-playbook.
+
+2. Refresh GSD bootstrap with force so profile is regenerated from current logic
+Run this:
+
+    scripts/bootstrap-gsd-workflow.sh \
+      --source-repo /Users/khandkermahmudur/Workspace/self/ai-playbook \
+      --client-repo /Users/khandkermahmudur/Workspace/fieldnation/fieldnation_ui \
+      --platform universal \
+      --harness-context \
+      --with-do-next --patch-mcp --force
+
+Expected outcome:
+- .gsd and workflow runtime are refreshed.
+- .gsd/DELIVERY-PROFILE.md gets auto-detected project validation commands for PHP/Composer.
+
+3. Verify setup quickly
+Run:
+
+    bootstrap-gsd-workflow.sh \
+      --source-repo /Users/khandkermahmudur/Workspace/self/ai-playbook \
+      --client-repo /Users/khandkermahmudur/Workspace/fieldnation/fieldnation_monolith \
+      --platform universal \
+      --check
+
+And confirm in repo:
+- wrapper files contain include lines like @_AGENTS.md
+- underscore files exist
+- .git/ai-playbook/universal.manifest.tsv exists
+- .gsd/DELIVERY-PROFILE.md contains AUTO:PROJECT-VALIDATION block with composer commands
+
+Reference scripts in this repo:
+- install-client-ai-overlay.sh
+- bootstrap-gsd-workflow.sh
+- README.md
+
+If you want, I can run these commands for you now and report exact before/after diffs.
