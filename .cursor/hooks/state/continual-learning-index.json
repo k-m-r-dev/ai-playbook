@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "transcripts": {
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/2aaf5b91-b580-477d-bede-507828b9abd9/2aaf5b91-b580-477d-bede-507828b9abd9.jsonl": {
+      "mtimeMs": 1782919014065.293,
+      "mtime": 1782919014.065293
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/3837984e-eaba-44bc-87be-be3a857b0114/3837984e-eaba-44bc-87be-be3a857b0114.jsonl": {
+      "mtimeMs": 1779716457576.0398,
+      "mtime": 1779716457.5760398
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/5ef193f8-a5cb-4223-aeb7-71e9bb5aea8b/5ef193f8-a5cb-4223-aeb7-71e9bb5aea8b.jsonl": {
+      "mtimeMs": 1780926763019.4624,
+      "mtime": 1780926763.0194623
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7508563f-28f7-4ca4-b7fc-fb9316a8c7df/7508563f-28f7-4ca4-b7fc-fb9316a8c7df.jsonl": {
+      "mtimeMs": 1780044925672.5718,
+      "mtime": 1780044925.672572
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7508563f-28f7-4ca4-b7fc-fb9316a8c7df/subagents/583daa9c-7e4f-454f-809c-e61f09cab9c3.jsonl": {
+      "mtimeMs": 1780040525855.7314,
+      "mtime": 1780040525.8557315
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7508563f-28f7-4ca4-b7fc-fb9316a8c7df/subagents/84e7f274-ffaf-419c-8ef0-10d88fa032e2.jsonl": {
+      "mtimeMs": 1780040646025.608,
+      "mtime": 1780040646.0256078
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7508563f-28f7-4ca4-b7fc-fb9316a8c7df/subagents/ad398228-b46b-434a-a577-d381661c1e95.jsonl": {
+      "mtimeMs": 1780040495830.4565,
+      "mtime": 1780040495.8304565
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7508563f-28f7-4ca4-b7fc-fb9316a8c7df/subagents/b24c289c-7f90-4a92-b7ac-fb6486d16773.jsonl": {
+      "mtimeMs": 1780042266156.8633,
+      "mtime": 1780042266.1568632
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7508563f-28f7-4ca4-b7fc-fb9316a8c7df/subagents/bd4e371f-b9e7-46f7-bb57-c54cf4822c2a.jsonl": {
+      "mtimeMs": 1780042294875.412,
+      "mtime": 1780042294.875412
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7508563f-28f7-4ca4-b7fc-fb9316a8c7df/subagents/bf1a7b6c-badc-4442-aa6e-e0193d3bab76.jsonl": {
+      "mtimeMs": 1780040422465.765,
+      "mtime": 1780040422.465765
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7508563f-28f7-4ca4-b7fc-fb9316a8c7df/subagents/e2fb4e65-c8b2-4a1f-852f-44bd80fef347.jsonl": {
+      "mtimeMs": 1780044816128.8674,
+      "mtime": 1780044816.1288674
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7508563f-28f7-4ca4-b7fc-fb9316a8c7df/subagents/e3c52de6-a3ea-4741-ab68-09180b4ae8ae.jsonl": {
+      "mtimeMs": 1780040472653.0085,
+      "mtime": 1780040472.6530085
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7508563f-28f7-4ca4-b7fc-fb9316a8c7df/subagents/ec182112-d945-4385-b169-cf0a2f730e8f.jsonl": {
+      "mtimeMs": 1780040530318.2253,
+      "mtime": 1780040530.3182254
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/7c12e512-66e3-46c3-93a8-84f5f53ba210.jsonl": {
+      "mtimeMs": 1780053537066.0461,
+      "mtime": 1780053537.0660462
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/0bc7c0a8-cb61-45cb-add3-19051b783eb8.jsonl": {
+      "mtimeMs": 1780046686341.869,
+      "mtime": 1780046686.3418689
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/12ac9047-d92d-431a-a653-9950b9068af8.jsonl": {
+      "mtimeMs": 1780046682118.1377,
+      "mtime": 1780046682.1181376
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/1340aec8-da8a-4b41-baa0-021f5eea1a6c.jsonl": {
+      "mtimeMs": 1780046717829.8608,
+      "mtime": 1780046717.829861
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/1547f0fd-aa86-4c3f-abf9-19b57d70e16d.jsonl": {
+      "mtimeMs": 1780046671738.9885,
+      "mtime": 1780046671.7389886
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/1bc2eff6-601d-4764-91e3-37625ae8fb14.jsonl": {
+      "mtimeMs": 1780046673705.442,
+      "mtime": 1780046673.705442
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/45818fc5-626a-4cb9-bc0b-cce48a1a95a6.jsonl": {
+      "mtimeMs": 1780046694818.8118,
+      "mtime": 1780046694.8188117
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/4d3f3f93-7db4-4c5b-a56f-5c430c3fe457.jsonl": {
+      "mtimeMs": 1780046726800.8533,
+      "mtime": 1780046726.8008533
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/8bd551b4-1aeb-4227-9ec5-142a474e611b.jsonl": {
+      "mtimeMs": 1780046708797.5059,
+      "mtime": 1780046708.7975059
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/979966b7-a0c7-4c2a-9b52-5b0195f7d9d8.jsonl": {
+      "mtimeMs": 1780046670559.1511,
+      "mtime": 1780046670.5591512
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/bdb8d13f-e0d9-477a-97ee-7c9a9c6072bc.jsonl": {
+      "mtimeMs": 1780046723918.9548,
+      "mtime": 1780046723.9189548
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/ece4b7f7-37f0-4768-89f8-1c3af0f19820.jsonl": {
+      "mtimeMs": 1780046720349.5469,
+      "mtime": 1780046720.349547
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/ef64c98b-8660-445f-866f-5acb7fbbe5e7.jsonl": {
+      "mtimeMs": 1780046671573.4998,
+      "mtime": 1780046671.5734997
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/f0e9b555-8d2f-4226-a67c-ae35dccb9595.jsonl": {
+      "mtimeMs": 1780046667658.822,
+      "mtime": 1780046667.658822
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/7c12e512-66e3-46c3-93a8-84f5f53ba210/subagents/ffd6e19d-7043-464e-ac15-57995d859de9.jsonl": {
+      "mtimeMs": 1780046681599.3862,
+      "mtime": 1780046681.5993862
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/98192b1c-75ae-40f8-b342-a9423359401b/98192b1c-75ae-40f8-b342-a9423359401b.jsonl": {
+      "mtimeMs": 1784032248539.5193,
+      "mtime": 1784032248.5395193
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/98192b1c-75ae-40f8-b342-a9423359401b/subagents/8c0c0791-f0b4-404a-a3d4-cff7e597d045.jsonl": {
+      "mtimeMs": 1784032277600.9233,
+      "mtime": 1784032277.6009233
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/ccbeba1e-b2d2-41ea-9ec4-8a2ba32cdbf6/ccbeba1e-b2d2-41ea-9ec4-8a2ba32cdbf6.jsonl": {
+      "mtimeMs": 1780039578660.74,
+      "mtime": 1780039578.66074
+    },
+    "/Users/khandkermahmudur/.cursor/projects/Users-khandkermahmudur-Workspace-self-ai-playbook/agent-transcripts/d1e45d09-4570-4754-bca6-0f16aaef04bf/d1e45d09-4570-4754-bca6-0f16aaef04bf.jsonl": {
+      "mtimeMs": 1780050282030.4453,
+      "mtime": 1780050282.0304453
+    }
+  }
+}
