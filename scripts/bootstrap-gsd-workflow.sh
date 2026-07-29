@@ -12,7 +12,7 @@ Usage:
     [--project-style auto|php|node|react-native-mono|python|generic] \
     [--harness-context] [--init-gsd] [--with-do-next] [--patch-mcp] [--force] [--check]
 
-Copies project-owned .gsd/workflow, idea packages, smoke script, DELIVERY-PROFILE template.
+Copies project-owned .gsd/workflow, idea packages, smoke + reproject scripts, DELIVERY-PROFILE template.
 With --platform and --harness-context, copies platform-specific DELIVERY-PROFILE + platform.md
 from shared/gsd/templates/platforms/<platform>/ (skip existing unless --force).
 EOF
@@ -290,6 +290,11 @@ if [[ ! -f "$CLIENT_REPO/.workflow/scripts/gsd-smoke.sh" || "$FORCE" == 1 ]]; th
   cp "$SHARED/scripts/gsd-smoke.py" "$CLIENT_REPO/.workflow/scripts/gsd-smoke.py"
   chmod +x "$CLIENT_REPO/.workflow/scripts/gsd-smoke.sh"
   status "COPY" ".workflow/scripts/gsd-smoke.*"
+fi
+if [[ ! -f "$CLIENT_REPO/.workflow/scripts/gsd-reproject-compat.mjs" || "$FORCE" == 1 ]]; then
+  cp "$SHARED/scripts/gsd-reproject-compat.mjs" "$CLIENT_REPO/.workflow/scripts/gsd-reproject-compat.mjs"
+  chmod +x "$CLIENT_REPO/.workflow/scripts/gsd-reproject-compat.mjs"
+  status "COPY" ".workflow/scripts/gsd-reproject-compat.mjs"
 fi
 
 if [[ "$INIT_GSD" == 1 && ! -f "$CLIENT_REPO/.gsd/gsd.db" ]]; then

@@ -5,3 +5,4 @@ description: >-
   async progress reports; conditional git/PR checkpoints with staged explicit
   user confirmation. Triggers:
   do-next-runner, $do-next-runner. Requires .gsd/ bootstrapped.
+---

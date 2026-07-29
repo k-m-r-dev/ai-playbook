@@ -32,6 +32,17 @@ Read [platform.md](platform.md) for module paths, doc read order, and verificati
 
 One question at a time. Codebase search before asking. Close when scope, users, done criteria, risks, integrations, and out-of-scope are clear.
 
+## Compat projection drift after planning (self-heal)
+
+`gsd_plan_slice` renders slice PLAN files + DB rows but (gsd-pi bug) does not write their `.gsd/.compat.json` projection entries, so a later `gsd-smoke` reports `plan-coherence` `md=0 db=N files=0 DRIFT` for every slice even though DB and markdown agree. After Phase 3 (Plan) — especially after planning slices — if only the projection index is missing (`grep -c "<M###>/S0" .gsd/.compat.json` == 0 while the PLAN files exist with tasks), self-heal:
+
+```bash
+node .workflow/scripts/gsd-reproject-compat.mjs <M###>
+.workflow/scripts/gsd-smoke.sh --milestone <M###>   # expect PASS
+```
+
+Index-only, additive, via gsd-pi's compat-marker API — never hand-edit `.compat.json`. Full guard + inline fallback: **do-next skill § 0.5.1 Compat projection drift**.
+
 ## Anti-patterns
 
 No parallel questions; no chat-only plans (use MCP); no `gsd_execute` without noting CLI billing; no raw `.gsd` edits when MCP exists.

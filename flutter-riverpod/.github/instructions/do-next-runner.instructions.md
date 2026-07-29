@@ -76,13 +76,28 @@ $do-next-runner [M###] [S##] [T##] [--max-units N] [--dry-run]
 4. Active `S##-PLAN.md` / `T##-PLAN.md`
 5. `ARCHITECTURE.md`
 
+## Git policy handshake (required)
+
+Before first execution unit, ask and confirm one mode:
+
+- `none` — no push/PR workflow required
+- `slice` — push/PR checkpoint at each slice completion
+- `milestone` — push/PR checkpoint at milestone progression
+
+If mode is not explicitly confirmed, STOP.
+
+At every slice completion, re-ask whether this slice should run push/PR now (projects can differ by slice).
+At every milestone progression boundary, re-ask whether milestone push/PR is required before advancing.
+
+No auto push/PR in runner mode. All git stages require explicit confirmation.
+
 ## Auto-continue contract
 
 `$do-next-runner` **overrides** Task Handoff Gate pause. Cap with `--max-units`.
 
 ## Orchestration loop
 
-```
+```text
 INIT → while (pending in scope AND units < max-units):
   0 Orient → 0.5 Smoke → 1 Route → 2x Execute → 3 Report → CONTINUE
 FINAL REPORT
@@ -105,6 +120,14 @@ FINAL REPORT
 
 FAIL → gap report → ask sync direction → **STOP**
 
+**Compat projection drift is the exception to "ask sync direction".** If the FAIL is `total md=0 db=N files=0 DRIFT` for every slice AND the rendered `NN-MM-PLAN.md` files exist with `<tasks>` AND `grep -c "<M###>/S0" .gsd/.compat.json` is `0`, it is a stale projection INDEX (gsd-pi `gsd_plan_slice` does not record slice-PLAN projections), not a content conflict. Self-heal instead of asking:
+
+```bash
+node .workflow/scripts/gsd-reproject-compat.mjs <M###>   # then re-run smoke --milestone <M###>
+```
+
+Full detection guard, cause, and inline fallback (for repos without the script): **do-next skill § 0.5.1 Compat projection drift**. Any real markdown↔DB content mismatch still uses the normal sync-direction STOP.
+
 ### 1. Route
 
 Map to do-next phases 2a/2b/2c/2d/2e (one unit). Respect `T##` / `S##` scope.
@@ -112,6 +135,14 @@ Map to do-next phases 2a/2b/2c/2d/2e (one unit). Respect `T##` / `S##` scope.
 ### 2x Execute
 
 Per do-next skill. Verify per DELIVERY-PROFILE. `gsd_task_complete` / `gsd_slice_complete` as appropriate.
+
+When execution reaches slice completion or milestone boundary, enforce staged confirmations:
+
+- Stage A: confirm push
+- Stage B: after push, confirm PR creation
+- Stage C: confirm continue/wait-for-merge behavior
+
+If user declines any stage, STOP and report pending checkpoint.
 
 ### 3. Report
 
@@ -133,9 +164,11 @@ python3 .gsd/idea/do-next-runner/scripts/push-gate.py --milestone {M} --slice {S
 
 Exit non-zero → block and STOP.
 
+Apply this only when current confirmed Git mode requires push/PR (`slice` or `milestone`).
+
 ## Stop conditions
 
-Smoke FAIL, verification FAIL, gate `flag`, MCP unavailable, `--max-units`, unauthorized push, scope complete.
+Smoke FAIL, verification FAIL, gate `flag`, MCP unavailable, `--max-units`, unauthorized push, awaiting user checkpoint confirmation, scope complete.
 
 ## Anti-patterns
 
@@ -143,4 +176,4 @@ Smoke FAIL, verification FAIL, gate `flag`, MCP unavailable, `--max-units`, unau
 - No auto-sync on drift
 - No `gsd_execute` / `gsd-advance-unit` as backend
 - No raw DB/STATE edits
-- No push without slice plan authorization
+- No push/PR without explicit staged user confirmations

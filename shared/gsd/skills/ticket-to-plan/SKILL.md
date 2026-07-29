@@ -69,6 +69,33 @@ Create and persist all milestone / slice / task plan artifacts **only** through 
 
 Always create **all** files/artifacts that GSD normally creates for the milestone, each slice, and each task (whatever the running GSD version projects via MCP / `.gsd/.compat.json`). Do not omit CONTEXT, ROADMAP, slice plans, task plans, or other standard artifacts that GSD would produce for a complete plan of that depth.
 
+### Verify projections after persisting — compat drift self-heal
+
+Known gsd-pi bug: `gsd_plan_slice` writes the DB rows and renders the slice PLAN files but does **not** record their `.gsd/.compat.json` projection entries (only `gsd_plan_milestone`'s ROADMAP projection is written). The next coherence/smoke check then reports `plan-coherence` `md=0 db=N files=0 DRIFT` for every slice even though the DB and the rendered markdown fully agree — a stale projection **index**, not a markdown↔DB content conflict, and not "partially created artifacts".
+
+Run this only once the full plan tree — including tasks (Step 5) — has been persisted via MCP, since the drift signature appears only after `gsd_plan_slice` has written task rows. Then run the coherence check. If it FAILs with that exact signature — `md=0 db>0 files=0 DRIFT` for the slices, the rendered `NN-MM-PLAN.md` files exist with `<tasks>`, and `grep -c "<M###>/S0" .gsd/.compat.json` returns `0` — self-heal the index (do **not** treat it as incomplete artifacts or a content conflict, and never hand-edit `.compat.json`):
+
+```bash
+node .workflow/scripts/gsd-reproject-compat.mjs <M###>   # if the repo has it
+```
+
+If the script is absent (fresh repo, or this global skill running elsewhere), run the inline equivalent — it uses gsd-pi's own compat-marker API to rewrite the milestone's phase projections from the on-disk rendered files (index-only, additive, idempotent):
+
+```bash
+M=<M###> node --input-type=module -e '
+import{readFileSync as R,readdirSync as D}from"node:fs";import{join as J}from"node:path";
+const r=process.cwd(),M=process.env.M,X=process.env.GSD_PI_EXT||J(process.env.HOME,".npm-global/lib/node_modules/@opengsd/gsd-pi/dist/resources/extensions/gsd");
+const{readCompatMarker:rd,writeCompatMarker:wr,computeProjectionSha:sha}=await import(J(X,"compat/compat-marker.js"));
+const p=J(r,".gsd","phases"),m=rd(r);let n=0;
+for(const d of D(p,{withFileTypes:true})){if(!d.isDirectory())continue;const a=J(p,d.name),F=D(a).filter(f=>f.endsWith(".md"));
+const rm=F.find(f=>/-ROADMAP\.md$/.test(f));if(!rm)continue;const rt=R(J(a,rm),"utf8"),id=(rt.match(/^#\s*(M\d+)\b/m)||[])[1];if(!id||(M&&id!==M))continue;
+m.projections["phases/"+d.name+"/"+rm]={sha:sha(rt),entities:[id]};n++;
+for(const f of F){const g=f.match(/^\d+-(\d+)-(PLAN|SUMMARY|UAT|REPLAN|ASSESSMENT)\.md$/);if(!g)continue;const t=R(J(a,f),"utf8");m.projections["phases/"+d.name+"/"+f]={sha:sha(t),entities:[id,id+"/S"+g[1]]};n++;}}
+m.lastWriter="gsd-pi";m.lastProjectedAt=new Date().toISOString();wr(r,m);console.log("reprojected",n);'
+```
+
+Then re-run the coherence check and confirm PASS after Step 5 (task persistence) and before requesting/recording final plan approval or handing off to execution (`do next`). Applies to the current flat-phase `.gsd/phases/` layout; if the check shows a genuine content mismatch (e.g. `md=2 db=4`), that is a real conflict — fall back to the normal stop-and-ask, do not auto-heal.
+
 ## Step 4 — Fill the Required Milestone Map completely
 
 Do not proceed to task breakdown until every required field is filled: top-level-unit/planning ID, human-readable scope slug, workstream name (if multi-unit), external ticket ID (optional), integration strategy, integration branch, commit cadence, review unit, Git/PR checkpoint mode, branch name (if applicable), execution sequence, validation commands, completion condition, size budget.

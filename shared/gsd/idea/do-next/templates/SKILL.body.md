@@ -61,6 +61,42 @@ If no active milestone, stop — direct user to **`$gsd-plan-milestone`**.
 
 **On FAIL:** STOP → gap report per slice → ask user: **markdown → DB** or **DB → markdown** → wait. No auto-sync.
 
+### 0.5.1 Compat projection drift (self-heal)
+
+**Symptom:** smoke `plan-coherence` FAILs with `total md=0 db=N files=0 DRIFT` for **every** slice, while the DB and the rendered `NN-MM-PLAN.md` files both hold the tasks.
+
+**Guard — self-heal ONLY when all three hold** (otherwise it is a real content conflict → keep the STOP above and ask *markdown → DB / DB → markdown*, no auto-sync):
+
+1. smoke shows `md=0 db>0 files=0 DRIFT` for the slices,
+2. rendered PLANs exist with tasks — `ls .gsd/phases/*/*-PLAN.md` and each has a `<tasks>` block,
+3. the index is missing entries — `grep -c "<M###>/S0" .gsd/.compat.json` returns `0`.
+
+**Cause (gsd-pi bug):** `gsd_plan_slice` writes the DB rows and renders the PLAN files but never records their `.compat.json` projection entries (`writeAndStore()` records a projection only when `basePath` is passed; the PLAN/slice renderers omit it). `gsd_checkpoint_db` and MCP reload do not backfill, and `resolve_slice_plan` needs those entries.
+
+**Fix (index-only, additive; regenerates from the correct DB/rendered files via gsd-pi's compat-marker API — never hand-edit `.compat.json`):**
+
+```bash
+node .workflow/scripts/gsd-reproject-compat.mjs <M###>
+.workflow/scripts/gsd-smoke.sh --milestone <M###>   # expect PASS
+```
+
+If the script is absent (fresh repo), recreate it from the canonical copy at `.workflow/scripts/gsd-reproject-compat.mjs`, or run the inline equivalent:
+
+```bash
+M=<M###> node --input-type=module -e '
+import{readFileSync as R,readdirSync as D}from"node:fs";import{join as J}from"node:path";
+const r=process.cwd(),M=process.env.M,X=process.env.GSD_PI_EXT||J(process.env.HOME,".npm-global/lib/node_modules/@opengsd/gsd-pi/dist/resources/extensions/gsd");
+const{readCompatMarker:rd,writeCompatMarker:wr,computeProjectionSha:sha}=await import(J(X,"compat/compat-marker.js"));
+const p=J(r,".gsd","phases"),m=rd(r);let n=0;
+for(const d of D(p,{withFileTypes:true})){if(!d.isDirectory())continue;const a=J(p,d.name),F=D(a).filter(f=>f.endsWith(".md"));
+const rm=F.find(f=>/-ROADMAP\.md$/.test(f));if(!rm)continue;const rt=R(J(a,rm),"utf8"),id=(rt.match(/^#\s*(M\d+)\b/m)||[])[1];if(!id||(M&&id!==M))continue;
+m.projections["phases/"+d.name+"/"+rm]={sha:sha(rt),entities:[id]};n++;
+for(const f of F){const g=f.match(/^\d+-(\d+)-(PLAN|SUMMARY|UAT|REPLAN|ASSESSMENT)\.md$/);if(!g)continue;const t=R(J(a,f),"utf8");m.projections["phases/"+d.name+"/"+f]={sha:sha(t),entities:[id,id+"/S"+g[1]]};n++;}}
+m.lastWriter="gsd-pi";m.lastProjectedAt=new Date().toISOString();wr(r,m);console.log("reprojected",n);'
+```
+
+Report the gsd-pi bug upstream so `gsd_plan_slice` records slice-PLAN projections.
+
 ### 1. Route
 
 | Signal | Action |

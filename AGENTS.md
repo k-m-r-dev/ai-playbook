@@ -8,6 +8,7 @@
 - Client installs must preserve IP isolation: never ship ai-playbook source content into client repositories.
 - Prefer Cursor-billed GSD orchestration via gsd-workflow MCP and `.gsd/` (gsd-pi v3) over CLI `gsd_execute` / Copilot billing for plan and execute skills.
 - When configuring client repos, ensure `.gitignore` covers overlay-generated or local-engine artifacts that should not be committed.
+- Before editing Claude or Copilot skill surfaces on platform templates, check whether they are symlinked to Cursor; update only real files and leave symlinked surfaces alone.
 
 ## Learned Workspace Facts
 
@@ -18,3 +19,5 @@
 - `graphify-obsidian` is shipped on platform templates and this repo as a `/graphify-obsidian` wrapper around graphify Obsidian export.
 - `scripts/repair-after-ruflo.sh` re-applies playbook hook-handler safety after `ruflo init` overwrites client helpers.
 - On macOS, graphify is commonly installed with `uv tool install graphifyy` (acceptable alternative to pip).
+- On platform templates, `.claude/skills/<name>` are typically directory symlinks to `../../.cursor/skills/<name>`; Copilot `.github/instructions/*.instructions.md` are real files that must be synced separately.
+- Playbook skills are authored in `shared/gsd/**/SKILL.body.md` and assembled onto platform templates via `shared/gsd/scripts/install-workflow-tools.sh`.

@@ -112,7 +112,7 @@ install_skill_cursor() {
   fi
   mkdir -p "$dest_dir"
   assemble_skill "$wrapper" "$body" "$dest" "$GSD_ROOT"
-  if [[ -f "$src_dir/platform.md.template" ]]; then
+  if [[ -f "$src_dir/platform.md.template" && ! -f "$dest_dir/platform.md" ]]; then
     cp "$src_dir/platform.md.template" "$dest_dir/platform.md"
   fi
 }

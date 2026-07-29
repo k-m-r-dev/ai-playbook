@@ -80,6 +80,14 @@ FINAL REPORT
 
 FAIL → gap report → ask sync direction → **STOP**
 
+**Compat projection drift is the exception to "ask sync direction".** If the FAIL is `total md=0 db=N files=0 DRIFT` for every slice AND the rendered `NN-MM-PLAN.md` files exist with `<tasks>` AND `grep -c "<M###>/S0" .gsd/.compat.json` is `0`, it is a stale projection INDEX (gsd-pi `gsd_plan_slice` does not record slice-PLAN projections), not a content conflict. Self-heal instead of asking:
+
+```bash
+node .workflow/scripts/gsd-reproject-compat.mjs <M###>   # then re-run smoke --milestone <M###>
+```
+
+Full detection guard, cause, and inline fallback (for repos without the script): **do-next skill § 0.5.1 Compat projection drift**. Any real markdown↔DB content mismatch still uses the normal sync-direction STOP.
+
 ### 1. Route
 
 Map to do-next phases 2a/2b/2c/2d/2e (one unit). Respect `T##` / `S##` scope.

@@ -20,9 +20,17 @@ check_contains() {
 }
 
 check_contains "$REPO/.cursor/skills/do-next/SKILL.md" "GSD bootstrap gate"
+check_contains "$REPO/.cursor/skills/do-next/SKILL.md" "Compat projection drift"
+check_contains "$REPO/.cursor/skills/do-next/SKILL.md" "gsd-reproject-compat.mjs"
 check_contains "$REPO/.cursor/skills/do-next-runner/SKILL.md" "Never"
+check_contains "$REPO/.cursor/skills/do-next-runner/SKILL.md" "Compat projection drift"
 check_contains "$REPO/.cursor/skills/gsd-plan-milestone/SKILL.md" "gsd_plan_milestone"
+check_contains "$REPO/.cursor/skills/gsd-plan-milestone/SKILL.md" "gsd-reproject-compat.mjs"
 check_contains "$REPO/.cursor/skills/gsd-advance-unit/SKILL.md" "gsd_progress"
+check_contains "$REPO/.cursor/skills/gsd-advance-unit/SKILL.md" "Compat projection drift"
+if [[ -f "$REPO/.github/instructions/do-next.instructions.md" ]]; then
+  check_contains "$REPO/.github/instructions/do-next.instructions.md" "gsd-reproject-compat.mjs"
+fi
 
 if [[ -d "$REPO/.gsd" ]]; then
   echo "OK .gsd/ present"

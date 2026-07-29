@@ -95,6 +95,17 @@ Read `T##-PLAN.md`. Implement per `ARCHITECTURE.md` + [platform.md](platform.md)
 
 Summarize unit. Say **`$gsd-advance-unit`** for next unit.
 
+## Compat projection drift (self-heal)
+
+If `gsd-smoke` `plan-coherence` FAILs `md=0 db=N files=0 DRIFT` for every slice while the rendered `NN-MM-PLAN.md` files exist with tasks and `grep -c "<M###>/S0" .gsd/.compat.json` is `0`, it is a stale projection INDEX (gsd-pi `gsd_plan_slice` does not record slice-PLAN projections), not a content conflict. Self-heal, then re-smoke:
+
+```bash
+node .workflow/scripts/gsd-reproject-compat.mjs <M###>
+.workflow/scripts/gsd-smoke.sh --milestone <M###>
+```
+
+Index-only, additive, via gsd-pi's compat-marker API — never hand-edit `.compat.json`. Full guard + inline fallback: **do-next skill § 0.5.1 Compat projection drift**.
+
 ## Anti-patterns
 
 - No `gsd_execute` / terminal `/gsd next` unless user explicitly requests TUI billing
