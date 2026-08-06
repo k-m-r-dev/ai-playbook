@@ -53,6 +53,7 @@ ai-playbook/
   flutter-*/          # Flutter + state-management variants
   scripts/            # Install overlay into client repos
   config/             # MCP + hook templates
+  shared/gsd/          # GSD workflow skills + personal-skills.manifest
   FRAMEWORK.md        # This document
   EXTENDING.md        # Add new AI tools
 ```
@@ -142,6 +143,37 @@ Legacy `.cursorrules` at repo root is optional; prefer `.cursor/rules/`.
 - `.github/copilot-instructions.md` — parsing + ledger rules
 - `.github/instructions/*.instructions.md` — thin routing to `ARCHITECTURE.md` / `SESSION_WORKFLOW.md`
 - No local MCP — agents use `graphify-out/GRAPH_REPORT.md` as structural ground truth
+
+## Personal Agents Hub
+
+The **Personal Agents Hub** replaces per-platform skill copies with a single
+assembly point at `~/.agents/skills`. Symlink bridges connect the hub to
+`~/.cursor/skills` and `~/.claude/skills`.
+
+```bash
+# Install all skills from the manifest
+bash scripts/install-personal-agents-hub.sh
+
+# Update one skill
+bash scripts/update-personal-skill.sh graphify-obsidian
+
+# Preview without changes
+bash scripts/install-personal-agents-hub.sh --dry-run
+```
+
+The canonical skill list lives in `shared/gsd/personal-skills.manifest`.
+Platform overlays (`universal/`, `ios/`, etc.) no longer carry copies of
+hub-managed skills. The lockfile `~/.playbook-hub-lock.json` tracks versions.
+
+| Skill | Type | Source |
+|-------|------|--------|
+| `do-next` | assembled | `idea/do-next/templates` |
+| `do-next-runner` | assembled | `idea/do-next-runner/templates` |
+| `gsd-plan-milestone` | assembled | `skills/gsd-plan-milestone` |
+| `gsd-advance-unit` | assembled | `skills/gsd-advance-unit` |
+| `ticket-to-plan` | flat | `skills/ticket-to-plan` |
+| `verified-pr-review` | flat | `skills/verified-pr-review` |
+| `graphify-obsidian` | flat | `skills/graphify-obsidian` |
 
 ## Install into a client repo
 

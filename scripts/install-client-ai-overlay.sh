@@ -145,6 +145,7 @@ SOURCE_REPO=""
 CLIENT_REPO=""
 PLATFORM=""
 REQUIRE_GSD=1
+WITH_DO_NEXT=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -175,6 +176,10 @@ while [[ $# -gt 0 ]]; do
     --name)
       NAME="$2"
       shift 2
+      ;;
+    --with-do-next)
+      WITH_DO_NEXT=1
+      shift
       ;;
     --no-require-gsd)
       REQUIRE_GSD=0
@@ -412,4 +417,19 @@ if [[ "$REQUIRE_GSD" == 1 && ! -d "$CLIENT_REPO/.gsd" ]]; then
   printf '         --source-repo %s \\\n' "$SOURCE_REPO" >&2
   printf '         --client-repo %s \\\n' "$CLIENT_REPO" >&2
   printf '         --init-gsd --patch-mcp --with-do-next\n\n' >&2
+fi
+
+printf '\n[INFO] GSD/do-next skills are now managed by the Personal Agents Hub.\n' >&2
+printf '       Platform overlays no longer carry copies of SoT skills.\n' >&2
+printf '       To install personal skills: bash scripts/install-personal-agents-hub.sh\n' >&2
+printf '       See: shared/gsd/personal-skills.manifest\n\n' >&2
+
+if [[ "$WITH_DO_NEXT" == 1 ]]; then
+  _wft="$SOURCE_REPO/shared/gsd/scripts/install-workflow-tools.sh"
+  if [[ -f "$_wft" ]]; then
+    printf '[do-next] Installing GSD workflow tools into %s ...\n' "$CLIENT_REPO"
+    bash "$_wft" --project --cursor --claude --copilot --repo "$CLIENT_REPO" --copy
+  else
+    printf '[WARN] install-workflow-tools.sh not found at %s\n' "$_wft" >&2
+  fi
 fi

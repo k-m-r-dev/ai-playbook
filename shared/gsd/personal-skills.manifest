@@ -1,0 +1,29 @@
+# personal-skills.manifest — Skills managed by install-personal-agents-hub.sh
+# Source-of-truth (SoT) lives in shared/gsd or ~/.agents/skills.
+# Platform overlays MUST NOT carry copies of these; install-personal-agents-hub.sh
+# assembles them into ~/.agents/skills, ~/.cursor/skills, ~/.claude/skills.
+#
+# Format: <skill-name> <source-type> <source-relative-path>
+#   source-type: assembled | flat | external
+#   assembled  = built from SKILL.body.md + wrapper via assemble-skill
+#   flat       = copied verbatim from source-relative-path/SKILL.md
+#   external   = lives in ~/.agents/skills already; hub only bridges
+#
+# Lines starting with # are comments. Blank lines ignored.
+
+# --- Assembled skills (GSD workflow) ---
+do-next               assembled   idea/do-next/templates
+do-next-runner         assembled   idea/do-next-runner/templates
+gsd-plan-milestone     assembled   skills/gsd-plan-milestone
+gsd-advance-unit       assembled   skills/gsd-advance-unit
+
+# --- Flat skills (single SKILL.md, no assembly) ---
+ticket-to-plan         flat        skills/ticket-to-plan
+verified-pr-review     flat        skills/verified-pr-review
+graphify-obsidian      flat        skills/graphify-obsidian
+
+# --- External skills (managed outside playbook, bridge only) ---
+# Add personal skills here that live in ~/.agents/skills and need
+# Cursor/Claude bridges but are NOT sourced from this repo.
+# Example:
+# my-custom-skill      external    -

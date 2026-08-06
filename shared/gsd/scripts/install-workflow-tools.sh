@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install do-next / do-next-runner / gsd-plan-milestone / gsd-advance-unit skills.
+# Install GSD workflow skills + flat skills (ticket-to-plan, verified-pr-review, graphify-obsidian).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -102,6 +102,14 @@ install_skill_cursor() {
       wrapper="$src_dir/SKILL.cursor.md"
       body="$src_dir/SKILL.body.md"
       ;;
+    ticket-to-plan|verified-pr-review|graphify-obsidian)
+      src_dir="$GSD_ROOT/skills/$skill"
+      wrapper=""
+      body=""
+      ;;
+    ticket-to-plan|verified-pr-review|graphify-obsidian)
+      return 0  # flat skills have no copilot wrapper
+      ;;
     *) die "Unknown skill: $skill" ;;
   esac
   local dest_dir="$base/.cursor/skills/$skill"
@@ -111,7 +119,11 @@ install_skill_cursor() {
     return
   fi
   mkdir -p "$dest_dir"
-  assemble_skill "$wrapper" "$body" "$dest" "$GSD_ROOT"
+  if [[ -z "${wrapper:-}" && -f "$src_dir/SKILL.md" ]]; then
+    cp "$src_dir/SKILL.md" "$dest"
+  else
+    assemble_skill "$wrapper" "$body" "$dest" "$GSD_ROOT"
+  fi
   if [[ -f "$src_dir/platform.md.template" && ! -f "$dest_dir/platform.md" ]]; then
     cp "$src_dir/platform.md.template" "$dest_dir/platform.md"
   fi
