@@ -64,7 +64,7 @@ Confirm `git status` in the client repo shows **no** staged AI overlay files (pa
 
 If wrapper files already exist, installer keeps existing content and prepends `@_...` includes when matching `_` template files are present.
 
-GSD milestone skills (`do-next`, `do-next-runner`, `gsd-plan-milestone`, `gsd-advance-unit`) ship in the overlay. **Runtime** `.gsd/` (workflow rules, idea packages, smoke script) is **not** installed by the overlay alone — run **`bootstrap-gsd-workflow.sh`** (see below). Full adoption guide: **[shared/gsd/README.md](shared/gsd/README.md)**.
+GSD milestone skills (`do-next`, `do-next-runner`, `gsd-plan-milestone`, `gsd-advance-unit`) are **not** copied into platform overlay trees. Install them into a **client** with **`bootstrap-gsd-workflow.sh --with-do-next`** or **`install-workflow-tools.sh --project`**, and onto your machine via the **Personal Agents Hub** (`scripts/install-personal-agents-hub.sh`). **Runtime** `.gsd/` is still not installed by the overlay alone — run bootstrap (see below). Guides: **[shared/gsd/README.md](shared/gsd/README.md)** · **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**.
 
 ## Scripts guide (when to use what)
 
@@ -256,10 +256,32 @@ bash scripts/add-do-next-to-overlay.sh \
   --platform ios
 ```
 
-### `scripts/sync-gsd-skills-to-overlays.sh`
+### `scripts/install-personal-agents-hub.sh`
 
-- **Use when**: you changed templates under `shared/gsd/` and need to refresh all platform overlays (`universal`, `ios`, `android`, `flutter-*`).
-- **Does**: re-runs the skill installer across playbook platform folders.
+- **Use when**: installing or refreshing personal hub skills from `shared/gsd/personal-skills.manifest` onto your machine (`~/.agents/skills` + Cursor/Claude bridges; optional `--codex`).
+- **Does**: assembles/copies SoT skills, writes `~/.playbook-hub-lock.json`, and creates IDE bridges.
+- **See also**: [shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)
+
+```bash
+bash scripts/install-personal-agents-hub.sh
+bash scripts/install-personal-agents-hub.sh --dry-run
+```
+
+### `scripts/update-personal-skill.sh`
+
+- **Use when**: you changed one skill under `shared/gsd/` and want to refresh only that skill in the personal hub.
+- **Does**: thin wrapper around `install-personal-agents-hub.sh --skills <name> --force`.
+
+```bash
+bash scripts/update-personal-skill.sh ticket-to-plan
+# refresh all hub skills:
+bash scripts/install-personal-agents-hub.sh --force
+```
+
+### `scripts/sync-gsd-skills-to-overlays.sh` (RETIRED)
+
+- **Retired**: refuses to run. SoT skills are no longer copied into platform overlay trees.
+- **Use instead**: `scripts/install-personal-agents-hub.sh` / `scripts/update-personal-skill.sh` for personal; `shared/gsd/scripts/install-workflow-tools.sh --project` for clients. See [shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md).
 
 ### `scripts/migrate-overlay-wrappers.sh`
 
@@ -283,8 +305,10 @@ bash scripts/add-do-next-to-overlay.sh \
 
 ### `shared/gsd/scripts/install-workflow-tools.sh`
 
-- **Use when**: installing or refreshing GSD-family skills without a full overlay reinstall.
-- **Modes**: `--project` (client repo) or `--personal` (`~/.cursor/skills`, `~/.claude/skills`); pick IDEs with `--cursor`, `--claude`, `--copilot`.
+- **Use when**: installing or refreshing GSD-family skills into a **client** repo without a full overlay reinstall.
+- **Prefer for personal**: `scripts/install-personal-agents-hub.sh` (lockfile + bridges). Use `--personal` only as a fallback.
+- **Modes**: `--project` (client repo) or `--personal`; pick IDEs with `--cursor`, `--claude`, `--copilot`.
+- **Default `--tools`**: `do-next`, `do-next-runner`, `gsd-plan-milestone`, `gsd-advance-unit`. Flat skills (`ticket-to-plan`, `verified-pr-review`, `graphify-obsidian`) need an explicit `--tools` list.
 - **Dry-run**: `--dry-run` prints actions without writing files.
 
 **Example (project, all IDEs):**
@@ -357,14 +381,16 @@ This copies `aitools/ios`, `android`, and Flutter variants. **`universal`** is m
 
 ## GSD milestone workflow (Cursor, Claude, Copilot)
 
-**Readiness ladder** — skills do not work until `.gsd/` is bootstrapped:
+**Readiness ladder** — skills and `.gsd/` runtime are installed from shared, not baked into platform trees:
 
 ```text
-1. install-client-ai-overlay.sh     → skills (symlinked into client)
-2. bootstrap-gsd-workflow.sh        → .gsd/ runtime (required)
-3. $gsd-plan-milestone              → ROADMAP
-4. do next / $do-next-runner        → custom workflow execution
-   — or $gsd-advance-unit           → pure GSD one unit
+1. Personal hub OR client install-from-shared
+   install-personal-agents-hub.sh             → ~/.agents/skills (+ Cursor/Claude bridges)
+   — or install-workflow-tools.sh --project   → client .cursor / .claude / .github skills
+2. bootstrap-gsd-workflow.sh                  → .gsd/ runtime (required for GSD)
+3. $gsd-plan-milestone                        → ROADMAP
+4. do next / $do-next-runner                  → custom workflow execution
+   — or $gsd-advance-unit                     → pure GSD one unit
 ```
 
 | Skill | Trigger | Role |
@@ -374,19 +400,21 @@ This copies `aitools/ios`, `android`, and Flutter variants. **`universal`** is m
 | `do-next` | `do next` / `$do-next` | Custom workflow unit (smoke, gates, slice commits) |
 | `do-next-runner` | `$do-next-runner` | Auto-chain do-next units |
 
-| IDE | Skill paths |
-| --- | --- |
-| Cursor | `.cursor/skills/<skill>/SKILL.md` |
-| Claude | `.claude/skills/<skill>/` (symlinked to Cursor) |
-| Copilot | `.github/instructions/<skill>.instructions.md` |
+| IDE | Personal hub | Client project |
+| --- | --- | --- |
+| Cursor | `~/.cursor/skills/<skill>` → `~/.agents/skills/<skill>` | `.cursor/skills/<skill>/SKILL.md` |
+| Claude | `~/.claude/skills/<skill>` → hub | `.claude/skills/<skill>/` |
+| Copilot | *(no personal hub)* | `.github/instructions/<skill>.instructions.md` via `--project --copilot` |
 
-Requires **gsd-workflow** MCP in `.mcp.json` (and `.cursor/mcp.json` for Cursor-only servers). Uses Cursor/Claude billing — not terminal `/gsd` unless you opt in. Canonical templates: **`shared/gsd/`** — see **[shared/gsd/README.md](shared/gsd/README.md)**.
+Requires **gsd-workflow** MCP in `.mcp.json` (and `.cursor/mcp.json` for Cursor-only servers). Uses Cursor/Claude billing — not terminal `/gsd` unless you opt in. Canonical templates: **`shared/gsd/`** — see **[shared/gsd/README.md](shared/gsd/README.md)** · **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**.
 
 ## Add tools or patch existing overlays
 
 - New AI IDE / CLI: **[EXTENDING.md](EXTENDING.md)**
 - Missing GSD runtime or do-next skills: `scripts/add-do-next-to-overlay.sh` or `scripts/bootstrap-gsd-workflow.sh`
-- Refresh GSD skill templates across platforms: `scripts/sync-gsd-skills-to-overlays.sh`
+- Add or update SoT skills: **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**
+- Refresh personal hub: `scripts/install-personal-agents-hub.sh` / `scripts/update-personal-skill.sh`
+- Refresh client skills from shared: `shared/gsd/scripts/install-workflow-tools.sh --project …`
 - Missing `SESSION_WORKFLOW.md`: `scripts/add-session-workflow-to-overlay.sh`
 - Missing `.github/copilot-instructions.md`: `scripts/add-copilot-instructions-to-overlay.sh`
 - Missing `.cursor/skills`: `scripts/add-cursor-skills-to-overlay.sh`

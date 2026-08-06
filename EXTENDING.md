@@ -93,7 +93,18 @@ Update platform allowlists in:
 
 ### 7. Skills lock
 
-Register Claude-compatible skills in `skills-lock.json` and add `.claude/skills/<name>/SKILL.md`.
+**Hub-managed skills** (preferred SoT path):
+
+- Author under `shared/gsd/` (flat `skills/<name>/SKILL.md` or assembled body + wrappers).
+- Register in `shared/gsd/personal-skills.manifest`.
+- Install/refresh with `scripts/install-personal-agents-hub.sh` or `scripts/update-personal-skill.sh`.
+- Full steps: **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**.
+
+Do **not** add SoT skills into platform overlay trees (`universal/`, `ios/`, `android/`, `flutter-*`). `scripts/sync-gsd-skills-to-overlays.sh` is retired and refuses to run.
+
+**Claude `skills-lock.json`**: still relevant for non-hub overlay skills that ship as real `.claude/skills/<name>/SKILL.md` entries in a client or platform template. Hub skills reach Claude via `~/.claude/skills` bridges (or project `--claude` install), not by copying into platform trees.
+
+**Copilot**: no personal hub — project instructions only (`install-workflow-tools.sh --project --copilot` → `.github/instructions/`).
 
 ### 8. Document in FRAMEWORK.md
 

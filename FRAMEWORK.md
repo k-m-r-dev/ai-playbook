@@ -150,11 +150,13 @@ The **Personal Agents Hub** replaces per-platform skill copies with a single
 assembly point at `~/.agents/skills`. Symlink bridges connect the hub to
 `~/.cursor/skills` and `~/.claude/skills`.
 
+Guide: **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**.
+
 ```bash
 # Install all skills from the manifest
 bash scripts/install-personal-agents-hub.sh
 
-# Update one skill
+# Update one skill after editing shared/gsd/
 bash scripts/update-personal-skill.sh graphify-obsidian
 
 # Preview without changes
@@ -163,7 +165,8 @@ bash scripts/install-personal-agents-hub.sh --dry-run
 
 The canonical skill list lives in `shared/gsd/personal-skills.manifest`.
 Platform overlays (`universal/`, `ios/`, etc.) no longer carry copies of
-hub-managed skills. The lockfile `~/.playbook-hub-lock.json` tracks versions.
+hub-managed skills. The lockfile `~/.playbook-hub-lock.json` (home directory,
+not under `~/.agents/skills`) tracks versions.
 
 | Skill | Type | Source |
 |-------|------|--------|
@@ -219,5 +222,6 @@ bash scripts/migrate-overlay-wrappers.sh \
 ## Further reading
 
 - **`EXTENDING.md`** — register Windsurf, Codex, JetBrains, custom MCP
+- **`shared/gsd/ADDING-SKILLS.md`** — add / update hub-managed skills
 - **`universal/README.md`** — per-overlay file map
 - Mobile-specific: `ios/README.md`, `android/README.md`, etc.

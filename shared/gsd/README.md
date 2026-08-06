@@ -12,6 +12,7 @@ Canonical source for GSD workflow rules, do-next tooling, and multi-IDE skill te
 | `idea/do-next-runner/` | Runner templates, scripts (`push-gate.py`, etc.) |
 | `scripts/` | `bootstrap-gsd-workflow.sh` helpers, smoke, installer |
 | `personal-skills.manifest` | Canonical list of skills managed by the Personal Agents Hub |
+| `ADDING-SKILLS.md` | Add / update hub-managed skills (single SoT) |
 
 ## Readiness ladder
 
@@ -77,8 +78,17 @@ gsd-advance-unit, ticket-to-plan, verified-pr-review, graphify-obsidian).
   ...
 ~/.cursor/skills/do-next -> ~/.agents/skills/do-next   # Bridge
 ~/.claude/skills/do-next -> ~/.agents/skills/do-next   # Bridge
-~/.playbook-hub-lock.json   # Version lockfile
+~/.playbook-hub-lock.json   # Version lockfile (home dir — not under ~/.agents/skills)
 ```
+
+## Adding or updating skills
+
+Author under `shared/gsd/`, register in `personal-skills.manifest`, then refresh the hub or a client. Full guide: **[ADDING-SKILLS.md](ADDING-SKILLS.md)**.
+
+1. Edit SoT (`skills/<name>/` or `idea/<name>/templates/`) — do not copy into platform overlay trees.
+2. Register new skills in `personal-skills.manifest`.
+3. Personal: `bash scripts/update-personal-skill.sh <name>` (or `install-personal-agents-hub.sh --force`).
+4. Client: `bash shared/gsd/scripts/install-workflow-tools.sh --project …` (pass flat skills via `--tools` when needed).
 
 ## Harness project context only
 
@@ -112,6 +122,10 @@ bash shared/gsd/scripts/install-workflow-tools.sh \\
 Prefer the Personal Agents Hub (`install-personal-agents-hub.sh`) over direct
 `install-workflow-tools.sh --personal`. The hub provides lockfile tracking,
 bridges, and flat skill support.
+
+**Copilot** has no personal hub path — use project install with `--copilot` only
+(`.github/instructions/`). Cursor and Claude use hub bridges under `~/.cursor/skills`
+and `~/.claude/skills`.
 
 ## Platform packs
 
