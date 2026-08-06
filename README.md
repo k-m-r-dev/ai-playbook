@@ -379,6 +379,28 @@ This copies `aitools/ios`, `android`, and Flutter variants. **`universal`** is m
 - Strict behavior available with `--existing-policy fail`
 - Already-installed clients: `scripts/patch-client-ai-gitignore.sh`
 
+## Update an existing skill
+
+Full steps (add + update, layouts, manifest, anti-patterns): **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**.
+
+1. Edit the SoT under `shared/gsd/` (not `~/.agents` and not platform overlay trees).
+2. Refresh your personal hub:
+
+```bash
+bash scripts/update-personal-skill.sh <skill-name>
+# or all hub skills:
+bash scripts/install-personal-agents-hub.sh --force
+```
+
+3. Commit/push the playbook change.
+4. Refresh **client** project skills when needed:
+
+```bash
+bash shared/gsd/scripts/install-workflow-tools.sh \
+  --project --cursor --claude --copilot \
+  --repo /path/to/client
+```
+
 ## GSD milestone workflow (Cursor, Claude, Copilot)
 
 **Readiness ladder** — skills and `.gsd/` runtime are installed from shared, not baked into platform trees:
@@ -412,8 +434,8 @@ Requires **gsd-workflow** MCP in `.mcp.json` (and `.cursor/mcp.json` for Cursor-
 
 - New AI IDE / CLI: **[EXTENDING.md](EXTENDING.md)**
 - Missing GSD runtime or do-next skills: `scripts/add-do-next-to-overlay.sh` or `scripts/bootstrap-gsd-workflow.sh`
-- Add or update SoT skills: **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**
-- Refresh personal hub: `scripts/install-personal-agents-hub.sh` / `scripts/update-personal-skill.sh`
+- **Update an existing skill**: [section above](#update-an-existing-skill) · full guide **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**
+- Add a new SoT skill: **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**
 - Refresh client skills from shared: `shared/gsd/scripts/install-workflow-tools.sh --project …`
 - Missing `SESSION_WORKFLOW.md`: `scripts/add-session-workflow-to-overlay.sh`
 - Missing `.github/copilot-instructions.md`: `scripts/add-copilot-instructions-to-overlay.sh`
