@@ -57,9 +57,12 @@ If no active milestone, stop — direct user to **`$gsd-plan-milestone`**.
 
 ```bash
 .workflow/scripts/gsd-smoke.sh
+.workflow/scripts/playbook-gsd-health.sh   # or MCP playbook_gsd_bridge_health
 ```
 
-**On FAIL:** STOP → gap report per slice → ask user: **markdown → DB** or **DB → markdown** → wait. No auto-sync.
+**On smoke FAIL:** STOP → gap report per slice → ask user: **markdown → DB** or **DB → markdown** → wait. No auto-sync.
+
+**On bridge DEGRADED:** STOP unless user explicitly accepts degrade (code may ship; ledger stays pending via `gsd_decision_save` — never fake PLAN/DB).
 
 ### 0.5.1 Compat projection drift (self-heal)
 
@@ -124,12 +127,18 @@ Report the gsd-pi bug upstream so `gsd_plan_slice` records slice-PLAN projection
 
 ### 2b. Execute task
 
-1. Read `T##-PLAN.md`
-2. Implement per `ARCHITECTURE.md`
-3. Verify per `.gsd/DELIVERY-PROFILE.md` and skill **`platform.md`**
-4. **`gsd_task_complete`** after verification passes
-5. **Task Handoff Gate:** pause for next `do next`
-6. **No commit** when `commit_cadence: slice`
+Canonical gsd-pi (≥1.12) tasks need a **running Attempt** before `gsd_task_complete`, then host publish before PLAN checkboxes update. Use the **playbook-gsd** MCP (never hand-edit PLAN/DB).
+
+1. **`playbook_gsd_bridge_health`** (or `.workflow/scripts/playbook-gsd-health.sh`). If degraded: STOP or take the documented degrade path (`gsd_decision_save` + ship on filesystem evidence — do **not** fake checkboxes).
+2. Read `T##-PLAN.md` (resolve path via `.gsd/.compat.json` / `gsd_progress` — do not hardcode layout).
+3. **`playbook_gsd_task_begin`** with `milestoneId` / `sliceId` / `taskId` (claims Attempt). On lease conflict: STOP; do not steal auto leases.
+4. Implement per `ARCHITECTURE.md`
+5. Verify per `.gsd/DELIVERY-PROFILE.md` and skill **`platform.md`**
+6. **`gsd_task_complete`** with required fields + `verificationEvidence`
+7. If response `nextStage` is **`verify`**: **`playbook_gsd_task_publish`** (required). If **`route`**: STOP for recovery — do not publish. Treat complete-without-publish as incomplete.
+8. On cancel/interrupt mid-task: **`playbook_gsd_task_abort`** so Attempts are not left `running`.
+9. **Task Handoff Gate:** pause for next `do next`
+10. **No commit** when `commit_cadence: slice`
 
 ### 2c. Complete slice
 
@@ -180,9 +189,12 @@ Do not skip on: new session, slice boundary, after gate saves / plan edits, bran
 
 - No auto-sync on markdown/DB drift
 - No raw `.gsd/gsd.db` or `.gsd/STATE.md` edits
+- No hand-toggling PLAN `[ ]` / `[x]` or inventing completion
 - No push/PR without explicit stage confirmation
 - No multiple units unless user says "run N steps"
-- No `gsd_execute` / terminal `/gsd next` as backend
+- No unsupervised full-milestone `gsd_execute` / terminal `/gsd next` as do-next backend (user may opt in explicitly; default is playbook-gsd begin→complete→publish)
+- No `gsd_task_complete` without a prior successful `playbook_gsd_task_begin` on canonical tasks
+- No treating `gsd_task_complete` as done when `nextStage` is still `verify` — must publish
 
 ## vs gsd-advance-unit
 

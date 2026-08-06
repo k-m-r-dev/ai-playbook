@@ -63,6 +63,8 @@ bash scripts/bootstrap-gsd-workflow.sh \
 
 Templates live in `shared/gsd/`. Overlay install warns when `.gsd/` is missing (`--no-require-gsd` to silence).
 
+For gsd-pi ≥1.12, also wire the **playbook-gsd** MCP (external Attempt claim/publish) from `shared/gsd/mcp/gsd-external-executor/` — included in `config/mcp.template.json` when using `--patch-mcp`. See that package's README and `STAGE-B.md` (future playbook-owned ledger).
+
 ### 5. Install script mapping (optional)
 
 To ship files with `install-client-ai-overlay.sh`, add paths under `universal/` (or a new `platform/`) and extend `MAPPINGS` in `scripts/install-client-ai-overlay.sh`:

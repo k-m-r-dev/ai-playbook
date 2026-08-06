@@ -309,9 +309,34 @@ fi
 if [[ "$PATCH_MCP" == 1 && -f "$SOURCE_REPO/config/mcp.template.json" ]]; then
   if [[ ! -f "$CLIENT_REPO/.mcp.json" ]]; then
     cp "$SOURCE_REPO/config/mcp.template.json" "$CLIENT_REPO/.mcp.json"
-    status "COPY" ".mcp.json from template (edit GSD_WORKFLOW_PROJECT_ROOT)"
+    status "COPY" ".mcp.json from template (edit GSD_WORKFLOW_PROJECT_ROOT + playbook-gsd path)"
   else
-    status "NOTE" "Merge gsd-workflow into .mcp.json manually if missing"
+    status "NOTE" "Merge gsd-workflow + playbook-gsd into .mcp.json manually if missing"
+  fi
+fi
+
+# Health wrapper for do-next family (SoT → client .workflow, same pattern as gsd-smoke)
+if [[ "$WITH_DO_NEXT" == 1 ]]; then
+  mkdir -p "$CLIENT_REPO/.workflow/scripts"
+  if [[ ! -f "$CLIENT_REPO/.workflow/scripts/playbook-gsd-health.sh" || "$FORCE" == 1 ]]; then
+    cp "$SHARED/scripts/playbook-gsd-health.sh" \
+      "$CLIENT_REPO/.workflow/scripts/playbook-gsd-health.sh"
+    # Client repos need PLAYBOOK_ROOT → ai-playbook (dogfood copy can leave defaults)
+    if [[ "$CLIENT_REPO" != "$SOURCE_REPO" ]]; then
+      awk -v root="$SOURCE_REPO" '
+        BEGIN { done=0 }
+        /^PLAYBOOK_ROOT=/ && !done {
+          print "PLAYBOOK_ROOT=\"${PLAYBOOK_ROOT:-" root "}\""
+          done=1
+          next
+        }
+        { print }
+      ' "$CLIENT_REPO/.workflow/scripts/playbook-gsd-health.sh" > "$CLIENT_REPO/.workflow/scripts/playbook-gsd-health.sh.tmp"
+      mv "$CLIENT_REPO/.workflow/scripts/playbook-gsd-health.sh.tmp" \
+        "$CLIENT_REPO/.workflow/scripts/playbook-gsd-health.sh"
+    fi
+    chmod +x "$CLIENT_REPO/.workflow/scripts/playbook-gsd-health.sh"
+    status "COPY" ".workflow/scripts/playbook-gsd-health.sh"
   fi
 fi
 

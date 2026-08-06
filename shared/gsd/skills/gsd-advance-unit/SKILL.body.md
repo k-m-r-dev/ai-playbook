@@ -45,7 +45,7 @@ Read ROADMAP + CONTEXT. Plan tasks. **`gsd_plan_slice`**. No product code.
 
 ### 2b. Execute task
 
-Read `T##-PLAN.md`. Implement per `ARCHITECTURE.md` + [platform.md](platform.md). Verify. **`gsd_task_complete`**.
+Call **`playbook_gsd_bridge_health`** then **`playbook_gsd_task_begin`**. Read `T##-PLAN.md`. Implement per `ARCHITECTURE.md` + [platform.md](platform.md). Verify. **`gsd_task_complete`**, then **`playbook_gsd_task_publish`** if `nextStage` is `verify` (abort with **`playbook_gsd_task_abort`** on cancel).
 
 ### 2c. Complete slice
 
@@ -68,7 +68,8 @@ Index-only, additive, via gsd-pi's compat-marker API — never hand-edit `.compa
 
 ## Anti-patterns
 
-- No `gsd_execute` / terminal `/gsd next` unless user explicitly requests TUI billing
+- No unsupervised full-milestone `gsd_execute` / terminal `/gsd next` unless user explicitly requests auto/TUI billing
+- No `gsd_task_complete` without `playbook_gsd_task_begin` on canonical tasks; publish when `nextStage` is `verify`
 - No raw `.gsd/` DB edits when MCP exists
 - No `gsd_task_complete` without verification
 - No multiple units unless user says "run N steps"

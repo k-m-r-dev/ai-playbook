@@ -76,7 +76,10 @@ FINAL REPORT
 
 ```bash
 .workflow/scripts/gsd-smoke.sh --milestone {MILESTONE_ID}
+.workflow/scripts/playbook-gsd-health.sh   # or MCP playbook_gsd_bridge_health
 ```
+
+Bridge health DEGRADED → STOP or explicit degrade (do not claim ledger done).
 
 FAIL → gap report → ask sync direction → **STOP**
 
@@ -94,7 +97,7 @@ Map to do-next phases 2a/2b/2c/2d/2e (one unit). Respect `T##` / `S##` scope.
 
 ### 2x Execute
 
-Per do-next skill. Verify per DELIVERY-PROFILE. `gsd_task_complete` / `gsd_slice_complete` as appropriate.
+Per do-next skill (including **playbook_gsd_task_begin** → implement → **gsd_task_complete** → **playbook_gsd_task_publish**). Verify per DELIVERY-PROFILE. `gsd_slice_complete` when the slice is ready.
 
 When execution reaches slice completion or milestone boundary, enforce staged confirmations:
 
@@ -134,6 +137,7 @@ Smoke FAIL, verification FAIL, gate `flag`, MCP unavailable, `--max-units`, unau
 
 - No `--skip-smoke`
 - No auto-sync on drift
-- No `gsd_execute` / `gsd-advance-unit` as backend
-- No raw DB/STATE edits
+- No unsupervised full-milestone `gsd_execute` as backend (playbook-gsd claim/publish is required for ledger)
+- No raw DB/STATE edits or hand-edited PLAN checkboxes
 - No push/PR without explicit staged user confirmations
+- No continuing the chain if begin/publish fails without an explicit degrade decision

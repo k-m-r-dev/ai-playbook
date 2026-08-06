@@ -71,6 +71,11 @@ Always create **all** files/artifacts that GSD normally creates for the mileston
 
 ### Verify projections after persisting — compat drift self-heal
 
+### Execution handoff (gsd-pi ≥1.12)
+
+After plan approval, execution via **do-next / do-next-runner** requires the **playbook-gsd** MCP (`playbook_gsd_task_begin` → `gsd_task_complete` → `playbook_gsd_task_publish`). Planning stays on stock `gsd_plan_*` only — do not hand-edit PLAN checkboxes or `.gsd/gsd.db`. Review plans via `gsd_progress` / `gsd_milestone_status` and `.compat.json`-resolved `.gsd/phases/*` files.
+
+
 Known gsd-pi bug: `gsd_plan_slice` writes the DB rows and renders the slice PLAN files but does **not** record their `.gsd/.compat.json` projection entries (only `gsd_plan_milestone`'s ROADMAP projection is written). The next coherence/smoke check then reports `plan-coherence` `md=0 db=N files=0 DRIFT` for every slice even though the DB and the rendered markdown fully agree — a stale projection **index**, not a markdown↔DB content conflict, and not "partially created artifacts".
 
 Run this only once the full plan tree — including tasks (Step 5) — has been persisted via MCP, since the drift signature appears only after `gsd_plan_slice` has written task rows. Then run the coherence check. If it FAILs with that exact signature — `md=0 db>0 files=0 DRIFT` for the slices, the rendered `NN-MM-PLAN.md` files exist with `<tasks>`, and `grep -c "<M###>/S0" .gsd/.compat.json` returns `0` — self-heal the index (do **not** treat it as incomplete artifacts or a content conflict, and never hand-edit `.compat.json`):

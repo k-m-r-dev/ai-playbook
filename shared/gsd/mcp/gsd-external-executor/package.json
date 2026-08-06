@@ -1,0 +1,16 @@
+{
+  "name": "@ai-playbook/gsd-external-executor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Playbook MCP bridge: claim/publish/abort gsd-pi Attempts for do-next (external executor)",
+  "bin": {
+    "playbook-gsd-mcp": "./bin/playbook-gsd-mcp.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "@opengsd/gsd-pi": ">=1.12.0 <1.13.0"
+  }
+}

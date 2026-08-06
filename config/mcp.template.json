@@ -33,6 +33,20 @@
         "GSD_WORKFLOW_PROJECT_ROOT": "/absolute/path/to/client-repo"
       },
       "autoStart": false
+    },
+    "playbook-gsd": {
+      "comment": "Playbook external-executor bridge (claim/publish/abort Attempts). Point args[0] at ai-playbook shared MCP bin.",
+      "command": "node",
+      "args": [
+        "/absolute/path/to/ai-playbook/shared/gsd/mcp/gsd-external-executor/bin/playbook-gsd-mcp.mjs"
+      ],
+      "cwd": "/absolute/path/to/client-repo",
+      "env": {
+        "GSD_WORKFLOW_PROJECT_ROOT": "/absolute/path/to/client-repo",
+        "GSD_PI_ROOT": "$GSD_PI_ROOT",
+        "NODE_PATH": "$GSD_PI_ROOT/node_modules"
+      },
+      "autoStart": false
     }
   }
 }
