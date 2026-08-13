@@ -122,8 +122,9 @@ Merge `config/claude.settings.local.example.json` into `.claude/settings.local.j
 1. Install overlay: `--platform universal`
 2. **Settings → MCP**: add graphify server — e.g. `graphify mcp start` if `uv tool install graphifyy` is on your PATH, or `uvx graphifyy mcp start` without a global install
 3. Enable **gsd-workflow** MCP for GSD skills under `.cursor/skills/`
-4. **Bootstrap GSD** in client repos: `bootstrap-gsd-workflow.sh --init-gsd --patch-mcp --with-do-next`
-5. Rules in `.cursor/rules/` enforce ledger + token budget
+4. **Bootstrap GSD** in client repos: `bootstrap-gsd-workflow.sh --init-gsd --patch-mcp --with-do-next` (or use **`configure-client-project`** skill from ai-playbook for guided setup + delivery-profile interview)
+5. **Preflight** (read-only): `scripts/configure-client-check.sh --source-repo <playbook> --client-repo <client>`
+6. Rules in `.cursor/rules/` enforce ledger + token budget
 
 ### GSD milestone execution (after bootstrap)
 

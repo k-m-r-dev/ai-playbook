@@ -1,6 +1,6 @@
 ## Learned User Preferences
 
-- Prefer grill-style clarification (one question at a time, recommendation plus alternatives) before implementing ambiguous skill or template work.
+- Prefer grill-style clarification (one question at a time, plain-English explanation per option, `[recommended]` default) before ambiguous skill, template, or client-configuration work.
 - Do not edit symlinked overlay files from ai-playbook in client repos; put project-specific overrides in committed wrappers that include playbook `_AGENTS.md` / `_CLAUDE.md` (same pattern as CLAUDE.md).
 - Continual-learning should maintain only project-local `AGENTS.md` learned sections — never overwrite playbook-owned `_AGENTS.md` policy content.
 - Prefer a short plan and explicit approval before permanent cross-client fixes.
@@ -10,7 +10,7 @@
 - When configuring client repos, ensure `.gitignore` covers overlay-generated or local-engine artifacts that should not be committed.
 - Before editing Claude or Copilot skill surfaces on platform templates, check whether they are symlinked to Cursor; update only real files and leave symlinked surfaces alone.
 - For multi-stack monorepos, prefer `--platform universal` at the repo root and defer nested Flutter (or other) platform overlays until that package exists.
-- Set client GSD delivery values in that project's `.gsd/DELIVERY-PROFILE.md`; do not customize `shared/gsd/templates/DELIVERY-PROFILE.md` for a single client.
+- Set client GSD delivery values in that project's `.gsd/DELIVERY-PROFILE.md` (clean profile only — never append `CLAUDE.md` / `AGENTS.md` wrapper content); do not customize `shared/gsd/templates/DELIVERY-PROFILE.md` for a single client.
 - Prefer a personal global skills hub at `~/.agents/skills` (Cursor/Claude bridges; optional Codex) with playbook `shared/gsd` as SoT; add/update skills via `shared/gsd/ADDING-SKILLS.md` and `scripts/install-personal-agents-hub.sh` / `update-personal-skill.sh` (manifest: `shared/gsd/personal-skills.manifest`); no multi-template skill forks — platform specifics via `shared/gsd/templates/platforms/` packs.
 
 ## Learned Workspace Facts
@@ -24,6 +24,6 @@
 - After `gsd_plan_slice` / ticket-to-plan, gsd-pi Attempt-based completion needs a running Attempt; playbook ships `shared/gsd/mcp/gsd-external-executor` (`playbook_gsd_task_begin` → `gsd_task_complete` → `playbook_gsd_task_publish` / abort) so do-next can advance the ledger without unsupervised `gsd_execute`.
 - On platform templates, `.claude/skills/<name>` are typically directory symlinks to `../../.cursor/skills/<name>`; Copilot `.github/instructions/*.instructions.md` are real files that must be synced separately.
 - Playbook skills are authored under `shared/gsd/` (flat `SKILL.md` or assembled `SKILL.body.md`); client install via `shared/gsd/scripts/install-workflow-tools.sh --project` (flat orphans need `--tools`).
-- Latest client GSD bring-up: `install-client-ai-overlay.sh` then `bootstrap-gsd-workflow.sh` with `--patch-mcp --with-do-next` (and `--harness-context` when useful); skip `--init-gsd` if the client already has `gsd.db`. `--patch-mcp` does not overwrite an existing `.mcp.json` — merge `playbook-gsd` manually when needed. `--with-do-next` copies `shared/gsd/scripts/playbook-gsd-health.sh` into client `.workflow/scripts/`. stderr warnings for `GSD_WORKFLOW_EXECUTORS_MODULE` / `GSD_WORKFLOW_WRITE_GATE_MODULE` are expected for local `~/.gsd` bridges. Client delivery settings live in `.gsd/DELIVERY-PROFILE.md`; re-bootstrap without `--force` will not overwrite an existing profile.
+- Preferred client GSD bring-up: playbook-operator `configure-client-project` skill from ai-playbook (`scripts/configure-client-check.sh` preflight, grill-style delivery interview, then overlay + `bootstrap-gsd-workflow.sh`); install via `scripts/update-personal-skill.sh configure-client-project`. Manual fallback: `install-client-ai-overlay.sh` then `bootstrap-gsd-workflow.sh` with `--patch-mcp --with-do-next` (and `--harness-context` when useful); skip `--init-gsd` if client already has `gsd.db`. `--patch-mcp` does not overwrite existing `.mcp.json` — merge `playbook-gsd` manually. `--with-do-next` copies `playbook-gsd-health.sh` into client `.workflow/scripts/`. stderr warnings for `GSD_WORKFLOW_EXECUTORS_MODULE` / `GSD_WORKFLOW_WRITE_GATE_MODULE` are expected. Re-bootstrap without `--force` will not overwrite an existing `DELIVERY-PROFILE.md`.
 - `.gsd` is often a symlink to `~/.gsd/projects/<id>`; path jails must allow that resolved store. Machine `.mcp.json` / `.workflow/` copies are local; committed SoTs are `config/mcp.template.json` and `shared/gsd/scripts/playbook-gsd-health.sh`.
 - If lean-ctx reports it is rooted elsewhere, the MCP jail is bound to another workspace; reload or re-enable the lean-ctx MCP (or add `extra_roots`) so `ctx_*` matches the open repo.

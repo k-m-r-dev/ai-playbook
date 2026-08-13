@@ -21,6 +21,9 @@ gsd-advance-unit       assembled   skills/gsd-advance-unit
 ticket-to-plan         flat        skills/ticket-to-plan
 verified-pr-review     flat        skills/verified-pr-review
 graphify-obsidian      flat        skills/graphify-obsidian
+configure-client-project flat        skills/configure-client-project
+
+# Playbook-operator only — not installed to client repos via install-workflow-tools.sh
 
 # --- External skills (managed outside playbook, bridge only) ---
 # Add personal skills here that live in ~/.agents/skills and need

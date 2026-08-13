@@ -8,6 +8,7 @@ Canonical source for GSD workflow rules, do-next tooling, and multi-IDE skill te
 | `templates/` | `DELIVERY-PROFILE.md`, `DECISIONS.md` starters |
 | `templates/platforms/` | Platform packs (ios, android, flutter-*, universal) |
 | `skills/` | IDE-neutral skill bodies (`gsd-plan-milestone`, `gsd-advance-unit`, flat skills) |
+| `skills/configure-client-project/` | Playbook-operator skill — configure client repos from ai-playbook (hub only) |
 | `idea/do-next/` | do-next skill templates + assembly |
 | `idea/do-next-runner/` | Runner templates, scripts (`push-gate.py`, etc.) |
 | `scripts/` | `bootstrap-gsd-workflow.sh` helpers, smoke, installer |
@@ -17,12 +18,29 @@ Canonical source for GSD workflow rules, do-next tooling, and multi-IDE skill te
 ## Readiness ladder
 
 ```text
+0. configure-client-project (skill)  -> guided bring-up from ai-playbook (optional)
 1. install-client-ai-overlay.sh     -> skills (symlinked)
-2. bootstrap-gsd-workflow.sh        -> .gsd/ REQUIRED
+2. bootstrap-gsd-workflow.sh        -> .gsd/ REQUIRED (--interactive for TTY delivery-profile interview)
 3. $gsd-plan-milestone              -> ROADMAP
 4. do next / $do-next-runner        -> custom workflow execution
    -- or $gsd-advance-unit          -> pure GSD one unit
 ```
+
+## Configure client project (playbook-operator)
+
+From the **ai-playbook** workspace, use the **`configure-client-project`** skill (personal hub only — not installed in client repos) to discover a target checkout, dry-check gaps, interview delivery settings, run overlay + bootstrap, fill `DELIVERY-PROFILE.md`, and verify before planning.
+
+Preflight (read-only):
+
+```bash
+bash scripts/configure-client-check.sh \
+  --source-repo /path/to/ai-playbook \
+  --client-repo /path/to/client
+```
+
+Install the skill locally: `bash scripts/update-personal-skill.sh configure-client-project`
+
+Terminal-only delivery-profile interview (no agent): add `--interactive` to bootstrap.
 
 ## Bootstrap (client repo)
 

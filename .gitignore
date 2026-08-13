@@ -105,3 +105,9 @@ vendor/
 coverage/
 .cache/
 tmp/
+.mcp.json
+.cursor/mcp.json
+.claude/.proven-config-version
+.claude/proven-config.json
+.cursor/hooks/state/continual-learning-index.json
+.cursor/hooks/state/continual-learning.json

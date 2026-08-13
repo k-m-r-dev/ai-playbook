@@ -10,11 +10,13 @@ Usage:
     --client-repo /path/to/client \
     [--platform universal|ios|android|flutter-riverpod|flutter-bloc] \
     [--project-style auto|php|node|react-native-mono|python|generic] \
-    [--harness-context] [--init-gsd] [--with-do-next] [--patch-mcp] [--force] [--check]
+    [--harness-context] [--init-gsd] [--with-do-next] [--patch-mcp] \
+    [--interactive] [--force] [--check]
 
 Copies project-owned .gsd/workflow, idea packages, smoke + reproject scripts, DELIVERY-PROFILE template.
 With --platform and --harness-context, copies platform-specific DELIVERY-PROFILE + platform.md
 from shared/gsd/templates/platforms/<platform>/ (skip existing unless --force).
+With --interactive, asks delivery-profile questions and fills in the copied template immediately.
 EOF
 }
 
@@ -30,6 +32,7 @@ PATCH_MCP=0
 HARNESS_CONTEXT=0
 FORCE=0
 CHECK_ONLY=0
+INTERACTIVE=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -43,6 +46,7 @@ while [[ $# -gt 0 ]]; do
     --patch-mcp) PATCH_MCP=1; shift ;;
     --force) FORCE=1; shift ;;
     --check) CHECK_ONLY=1; shift ;;
+    --interactive|-i) INTERACTIVE=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) die "Unknown arg: $1" ;;
   esac
@@ -59,6 +63,174 @@ SHARED="$SOURCE_REPO/shared/gsd"
 [[ -d "$SHARED" ]] || die "missing $SHARED"
 
 status() { printf '[%s] %s\n' "$1" "$2"; }
+
+# ── Interactive delivery-profile helpers ───────────────────────────────────
+
+# _ask_choice_impl QUESTION DEFAULT_IDX "val1|desc1" "val2|desc2" ...
+# Prints a numbered menu where every option has a plain-English description.
+# Returns the chosen value on stdout. Accepts a number or the value directly.
+# Falls back to free-text for anything else.
+_ask_choice_impl() {
+  local question="$1" default_idx="$2"
+  shift 2
+  local entries=("$@")
+  local n="${#entries[@]}"
+
+  printf '\n%s\n' "$question"
+  local i
+  for (( i=0; i<n; i++ )); do
+    local val="${entries[$i]%%|*}"
+    local desc="${entries[$i]#*|}"
+    local marker=""
+    (( i+1 == default_idx )) && marker=" [recommended]"
+    printf '  %d) %-20s %s%s\n' "$((i+1))" "$val" "$desc" "$marker"
+  done
+  printf 'Enter number or value [%d]: ' "$default_idx"
+
+  local answer
+  read -r answer </dev/tty
+  answer="${answer:-$default_idx}"
+
+  # Numeric input
+  if [[ "$answer" =~ ^[0-9]+$ ]] && (( answer >= 1 && answer <= n )); then
+    local chosen="${entries[$((answer-1))]%%|*}"
+    printf '%s\n' "$chosen"
+    return
+  fi
+
+  # Direct value match
+  local entry
+  for entry in "${entries[@]}"; do
+    local val="${entry%%|*}"
+    if [[ "$answer" == "$val" ]]; then
+      printf '%s\n' "$val"
+      return
+    fi
+  done
+
+  # Free-text fallback (custom branch names, custom ticket system labels, etc.)
+  printf '%s\n' "$answer"
+}
+
+# configure_delivery_profile — asks 5 questions and patches the profile in place.
+configure_delivery_profile() {
+  local profile="$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md"
+  [[ -f "$profile" ]] || return 0
+
+  printf '\n=== Delivery Profile Configuration ===\n'
+  printf 'Answer a few questions to fill in .gsd/DELIVERY-PROFILE.md.\n'
+  printf 'Press Enter to accept the recommended option.\n'
+
+  # Q1 — Integration strategy
+  local strategy
+  strategy="$(_ask_choice_impl \
+    'Q1. How should agents integrate code into the main codebase?' 1 \
+    "trunk-direct|Commit straight to main; no pull requests. Best for solo or fast-moving greenfield." \
+    "feature-branch|Create a branch per milestone and open a pull request to merge. Good when you want a review before code lands." \
+  )"
+
+  # Q2 — Integration branch (custom menu because option 3 is free-text)
+  printf '\nQ2. Which branch should agents target for commits or pull requests?\n'
+  printf '  1) %-20s %s [recommended]\n' "main" "The default production branch most repos use."
+  printf '  2) %-20s %s\n'               "develop" "A long-lived staging branch between feature branches and main."
+  printf '  3) other                 Type a custom branch name.\n'
+  printf 'Enter number or branch name [1]: '
+  local branch_ans branch
+  read -r branch_ans </dev/tty
+  branch_ans="${branch_ans:-1}"
+  case "$branch_ans" in
+    1|main)    branch="main" ;;
+    2|develop) branch="develop" ;;
+    3|other)
+      printf 'Branch name: '
+      read -r branch </dev/tty
+      ;;
+    *) branch="$branch_ans" ;;
+  esac
+
+  # Q3 — Commit cadence
+  local cadence
+  cadence="$(_ask_choice_impl \
+    'Q3. When should agents create a git commit during a milestone?' 1 \
+    "slice|After each small verified unit of work. Easier to review and revert if something goes wrong." \
+    "milestone|One commit when the entire milestone is finished. Simpler history but harder to revert part of it." \
+  )"
+
+  # Q4 — Review unit (options adapt to Q1 answer)
+  local review_unit
+  if [[ "$strategy" == "trunk-direct" ]]; then
+    review_unit="$(_ask_choice_impl \
+      'Q4. Should agents open pull requests for review?' 1 \
+      "none|No pull requests. Code commits go straight to the target branch. Matches trunk-direct." \
+      "pr-per-milestone|Open one pull request per milestone even though you are committing to a shared branch." \
+    )"
+  else
+    review_unit="$(_ask_choice_impl \
+      'Q4. How often should agents open a pull request?' 1 \
+      "pr-per-milestone|One pull request per complete milestone. Good balance of review overhead and granularity." \
+      "pr-per-slice|One pull request per slice. Most granular, but also the most overhead." \
+      "none|No pull requests. Merge feature branches directly without a review step." \
+    )"
+  fi
+
+  # Derive checkpoint mode from review unit
+  local checkpoint_mode
+  case "$review_unit" in
+    pr-per-slice)     checkpoint_mode="slice" ;;
+    pr-per-milestone) checkpoint_mode="milestone" ;;
+    *)                checkpoint_mode="none" ;;
+  esac
+
+  # Q5 — External tickets
+  local tickets
+  tickets="$(_ask_choice_impl \
+    'Q5. Should agents reference an external ticket system in commits and pull requests?' 1 \
+    "none|No ticket system. Agents use scope slugs only. Best for solo or greenfield projects." \
+    "Linear|Reference Linear ticket IDs (e.g. ENG-123) in commits and pull request descriptions." \
+    "JIRA|Reference JIRA issue keys (e.g. PROJ-456) in commits and pull request descriptions." \
+    "GitHub Issues|Reference GitHub issue numbers (e.g. #42) in commits and pull request descriptions." \
+  )"
+
+  # ── Patch the profile in place via Python ──────────────────────────────
+  python3 - "$profile" "$strategy" "$branch" "$cadence" "$review_unit" "$checkpoint_mode" "$tickets" <<'INNERPY'
+import sys, re
+
+profile, strategy, branch, cadence, review_unit, checkpoint_mode, tickets = sys.argv[1:]
+
+with open(profile) as f:
+    content = f.read()
+
+def patch_row(text, field, value):
+    pattern = r'(\|\s*' + re.escape(field) + r'\s*\|)[^\n]+'
+    replacement = r'\1 `' + value.replace('\\', '\\\\') + r'` |'
+    return re.sub(pattern, replacement, text)
+
+cadence_full = cadence + ' \u2014 one commit after each slice completes verification' if cadence == 'slice' else cadence
+
+content = patch_row(content, 'Integration strategy', strategy)
+content = patch_row(content, 'Integration branch', branch)
+content = patch_row(content, 'Commit cadence', cadence_full)
+content = patch_row(content, 'Review unit', review_unit)
+content = patch_row(content, 'Git/PR checkpoint mode', checkpoint_mode)
+content = patch_row(content, 'External tickets', tickets)
+
+with open(profile, 'w') as f:
+    f.write(content)
+
+print('[CONFIG] .gsd/DELIVERY-PROFILE.md patched')
+INNERPY
+
+  # ── Summary table ───────────────────────────────────────────────────────
+  printf '\n--- Delivery Profile Summary ---\n'
+  printf '  Integration strategy : %s\n' "$strategy"
+  printf '  Integration branch   : %s\n' "$branch"
+  printf '  Commit cadence       : %s\n' "$cadence"
+  printf '  Review unit          : %s\n' "$review_unit"
+  printf '  Git/PR checkpoint    : %s\n' "$checkpoint_mode"
+  printf '  External tickets     : %s\n' "$tickets"
+  printf '--------------------------------\n'
+}
+
 
 detect_universal_project_style() {
   local repo="$1"
@@ -236,6 +408,10 @@ if [[ "$HAS_MCP" == 0 ]]; then status "MISSING" "gsd-workflow in .mcp.json → u
 else status "OK" "gsd-workflow MCP"; fi
 
 if [[ "$CHECK_ONLY" == 1 ]]; then
+  if [[ -f "$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md" ]] && \
+     grep -q "main or develop" "$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md" 2>/dev/null; then
+    status "INFO" "DELIVERY-PROFILE.md has unconfigured placeholders — re-run with --interactive to fill them in"
+  fi
   [[ "$HAS_GSD" == 1 && "$HAS_WORKFLOW" == 1 ]] || exit 1
   exit 0
 fi
@@ -272,6 +448,15 @@ fi
 
 inject_project_validation_block
 
+# Interactive delivery-profile interview
+if [[ "$INTERACTIVE" == 1 ]]; then
+  if [[ -t 0 ]] || [[ -e /dev/tty ]]; then
+    configure_delivery_profile
+  else
+    status "WARN" "--interactive requested but no TTY available; skipping delivery-profile interview"
+  fi
+fi
+
 if [[ "$WITH_DO_NEXT" == 1 ]]; then
   copy_tree "$SHARED/idea/do-next" "$CLIENT_REPO/.gsd/idea/do-next"
   copy_tree "$SHARED/idea/do-next-runner" "$CLIENT_REPO/.gsd/idea/do-next-runner"
@@ -307,11 +492,15 @@ if [[ "$INIT_GSD" == 1 && ! -f "$CLIENT_REPO/.gsd/gsd.db" ]]; then
 fi
 
 if [[ "$PATCH_MCP" == 1 && -f "$SOURCE_REPO/config/mcp.template.json" ]]; then
-  if [[ ! -f "$CLIENT_REPO/.mcp.json" ]]; then
+  MERGE_MCP="$SOURCE_REPO/scripts/merge-mcp-template.sh"
+  if [[ -f "$MERGE_MCP" ]]; then
+    # Merge only missing servers; never overwrite existing entries
+    bash "$MERGE_MCP"       --source-repo "$SOURCE_REPO"       --client-repo "$CLIENT_REPO"       --servers "gsd-workflow,playbook-gsd"
+  elif [[ ! -f "$CLIENT_REPO/.mcp.json" ]]; then
     cp "$SOURCE_REPO/config/mcp.template.json" "$CLIENT_REPO/.mcp.json"
     status "COPY" ".mcp.json from template (edit GSD_WORKFLOW_PROJECT_ROOT + playbook-gsd path)"
   else
-    status "NOTE" "Merge gsd-workflow + playbook-gsd into .mcp.json manually if missing"
+    status "WARN" "merge-mcp-template.sh missing; cannot merge into existing .mcp.json"
   fi
 fi
 
