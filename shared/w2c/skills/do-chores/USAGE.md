@@ -7,3 +7,5 @@ Scope only picks the queue. Without `--max-units` the skill always stops after o
 **Need first:** requesting-code-review. If it is missing, the skill stops and tells you to add it.
 
 **Need in the repo:** `.w2c/scripts/` from `scripts/install-w2c-to-project.sh`.
+
+Progress logs stay on the machine under `.w2c/runtime/` and are not committed.

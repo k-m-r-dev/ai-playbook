@@ -130,6 +130,96 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
+def events_path(root: Path) -> Path:
+    return w2c_dir(root) / "runtime" / "events.jsonl"
+
+
+def iso_ts() -> str:
+    return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def append_event(
+    root: Path,
+    *,
+    skill: str,
+    stage: str,
+    event: str,
+    milestone: str | None = None,
+    slice_id: str | None = None,
+    task_id: str | None = None,
+    detail: str = "",
+) -> dict:
+    """Append one JSONL event under .w2c/runtime/ (gitignored, local-only)."""
+    path = events_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rec = {
+        "ts": iso_ts(),
+        "skill": skill,
+        "stage": stage,
+        "event": event,
+        "milestone": milestone,
+        "slice": slice_id,
+        "task": task_id,
+        "detail": detail or "",
+    }
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    return rec
+
+
+def read_events(root: Path) -> list[dict]:
+    path = events_path(root)
+    if not path.is_file():
+        return []
+    out: list[dict] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return out
+
+
+def cmd_event(
+    root: Path,
+    skill: str,
+    stage: str,
+    event: str,
+    milestone: str | None,
+    slice_id: str | None,
+    task_id: str | None,
+    detail: str,
+) -> int:
+    rec = append_event(
+        root,
+        skill=skill,
+        stage=stage,
+        event=event,
+        milestone=milestone,
+        slice_id=slice_id,
+        task_id=task_id,
+        detail=detail,
+    )
+    print(json.dumps(rec, ensure_ascii=False))
+    return 0
+
+
+def cmd_events(root: Path, tail: int, skill: str | None) -> int:
+    rows = read_events(root)
+    if skill:
+        rows = [r for r in rows if r.get("skill") == skill]
+    if tail > 0:
+        rows = rows[-tail:]
+    for rec in rows:
+        print(json.dumps(rec, ensure_ascii=False))
+    if not rows:
+        print("(no events)")
+    return 0
+
+
 def format_datetime(dt: datetime | None = None) -> str:
     dt = dt or datetime.now().astimezone()
     offset = dt.utcoffset()
@@ -550,6 +640,13 @@ def cmd_init(root: Path) -> int:
         atomic_write(ctx0, tpl if tpl.endswith("\n") else tpl + "\n")
         created.append("contexts/CONTEXTv1.0.md")
     rebuild_ledger(root)
+    append_event(
+        root,
+        skill="w2c",
+        stage="init",
+        event="complete",
+        detail=", ".join(created) or "already present",
+    )
     print("initialized .w2c/" + (f" ({', '.join(created)})" if created else " (already present)"))
     return 0
 
@@ -635,6 +732,16 @@ def cmd_complete(root: Path, mid: str, sid: str, tid: str) -> int:
             "phase": "executing",
         }
     rebuild_ledger(root, overrides)
+    append_event(
+        root,
+        skill="do-chores",
+        stage="complete",
+        event="complete",
+        milestone=mid,
+        slice_id=sid,
+        task_id=tid,
+        detail=f"complete {mid} {sid} {tid}",
+    )
     print(f"complete {mid} {sid} {tid}")
     return 0
 
@@ -677,6 +784,14 @@ def cmd_milestone_status(root: Path, mid: str, status: str) -> int:
         elif status == "DONE":
             overrides["phase"] = "idle"
     rebuild_ledger(root, overrides or None)
+    append_event(
+        root,
+        skill="w2c",
+        stage="plan",
+        event="status",
+        milestone=mid,
+        detail=f"{mid} -> {status}",
+    )
     print(f"{mid} -> {status} {STATUS_EMOJI[status]}")
     return 0
 
@@ -723,6 +838,14 @@ def cmd_milestone_new(root: Path, slug: str) -> int:
             "phase": "planning",
         },
     )
+    append_event(
+        root,
+        skill="work-to-chores",
+        stage="write",
+        event="complete",
+        milestone=mid,
+        detail=f"created {d.relative_to(root)}",
+    )
     print(f"created {d.relative_to(root)} ({mid})")
     return 0
 
@@ -755,6 +878,13 @@ def cmd_decide(
         text += "\n"
     atomic_write(path, text + row)
     rebuild_ledger(root)
+    append_event(
+        root,
+        skill="work-to-chores",
+        stage="decide",
+        event="complete",
+        detail=f"{did} {scope}",
+    )
     print(did)
     return 0
 
@@ -782,6 +912,13 @@ def cmd_context_new(root: Path, major: bool, minor: bool) -> int:
     if dest.exists():
         raise W2CError(f"refusing to overwrite {dest.name}")
     atomic_write(dest, context_frontmatter(version, slug) + body)
+    append_event(
+        root,
+        skill="work-to-chores",
+        stage="write",
+        event="complete",
+        detail=str(dest.relative_to(root)),
+    )
     print(dest.relative_to(root))
     return 0
 
@@ -896,7 +1033,15 @@ def run_smoke(root: Path) -> Report:
 def cmd_smoke(root: Path) -> int:
     report = run_smoke(root)
     report.print()
-    return 1 if report.failed() else 0
+    failed = report.failed()
+    append_event(
+        root,
+        skill="w2c",
+        stage="smoke",
+        event="fail" if failed else "pass",
+        detail="smoke FAIL" if failed else "smoke PASS",
+    )
+    return 1 if failed else 0
 
 
 def main_smoke(argv: list[str] | None = None) -> int:
@@ -956,6 +1101,19 @@ def build_parser() -> argparse.ArgumentParser:
     g = cx.add_mutually_exclusive_group(required=True)
     g.add_argument("--major", action="store_true")
     g.add_argument("--minor", action="store_true")
+
+    ev = sub.add_parser("event", help="append a local runtime event (gitignored)")
+    ev.add_argument("--skill", required=True)
+    ev.add_argument("--stage", required=True)
+    ev.add_argument("--event", required=True)
+    ev.add_argument("--milestone", default=None)
+    ev.add_argument("--slice", dest="slice_id", default=None)
+    ev.add_argument("--task", dest="task_id", default=None)
+    ev.add_argument("--detail", default="")
+
+    evs = sub.add_parser("events", help="print local runtime events")
+    evs.add_argument("--tail", type=int, default=20, help="last N events; 0 = all")
+    evs.add_argument("--skill", default=None)
     return p
 
 
@@ -993,6 +1151,19 @@ def dispatch(args: argparse.Namespace) -> int:
         )
     if cmd == "context-new":
         return cmd_context_new(root, args.major, args.minor)
+    if cmd == "event":
+        return cmd_event(
+            root,
+            args.skill,
+            args.stage,
+            args.event,
+            args.milestone,
+            args.slice_id,
+            args.task_id,
+            args.detail or "",
+        )
+    if cmd == "events":
+        return cmd_events(root, args.tail, args.skill)
     raise W2CError(f"unknown command {cmd}")
 
 

@@ -161,6 +161,76 @@ class W2CTests(unittest.TestCase):
         self.assertEqual(names2["state-agrees-roadmap"].status, "FAIL")
         self.assertTrue(report2.failed())
 
+    def test_events_append_under_runtime_not_ledger_root(self) -> None:
+        path = w2c.events_path(self.tmp)
+        self.assertEqual(path, self.tmp / ".w2c/runtime/events.jsonl")
+        self.assertEqual(
+            w2c.cmd_event(
+                self.tmp, "work-to-chores", "gather", "started", "M001", "S01", "T01", "begin"
+            ),
+            0,
+        )
+        self.assertTrue(path.is_file())
+        self.assertFalse((self.tmp / ".w2c/events.jsonl").exists())
+        recs = w2c.read_events(self.tmp)
+        self.assertGreaterEqual(len(recs), 1)
+        last = recs[-1]
+        self.assertEqual(last["skill"], "work-to-chores")
+        self.assertEqual(last["stage"], "gather")
+        self.assertEqual(last["event"], "started")
+        self.assertEqual(last["milestone"], "M001")
+        self.assertEqual(last["slice"], "S01")
+        self.assertEqual(last["task"], "T01")
+        self.assertIn("ts", last)
+
+        self.assertEqual(w2c.cmd_event(self.tmp, "do-chores", "smoke", "pass", None, None, None, ""), 0)
+        self.assertEqual(
+            w2c.cmd_event(self.tmp, "do-chores", "implement", "started", "M001", None, None, ""),
+            0,
+        )
+        import contextlib
+        import io
+
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(w2c.cmd_events(self.tmp, tail=2, skill="do-chores"), 0)
+        lines = [ln for ln in buf.getvalue().splitlines() if ln and ln != "(no events)"]
+        self.assertEqual(len(lines), 2)
+        for ln in lines:
+            rec = __import__("json").loads(ln)
+            self.assertEqual(rec["skill"], "do-chores")
+
+        rc = w2c.main(
+            [
+                "--root",
+                str(self.tmp),
+                "event",
+                "--skill",
+                "w2c",
+                "--stage",
+                "test",
+                "--event",
+                "started",
+                "--detail",
+                "cli",
+            ]
+        )
+        self.assertEqual(rc, 0)
+        recs = w2c.read_events(self.tmp)
+        self.assertEqual(recs[-1]["skill"], "w2c")
+        self.assertEqual(recs[-1]["detail"], "cli")
+
+    def test_complete_logs_under_runtime(self) -> None:
+        self._seed_open_tasks()
+        self.assertEqual(w2c.cmd_complete(self.tmp, "M001", "S01", "T01"), 0)
+        path = w2c.events_path(self.tmp)
+        self.assertTrue(path.is_file())
+        self.assertEqual(path.parent.name, "runtime")
+        recs = w2c.read_events(self.tmp)
+        self.assertTrue(
+            any(r.get("event") == "complete" and r.get("task") == "T01" for r in recs)
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

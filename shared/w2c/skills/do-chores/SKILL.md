@@ -31,14 +31,14 @@ Scope only narrows the queue. It does not drain a milestone unless `--max-units`
 
 ## Prerequisites (hard stop)
 
-1. **requesting-code-review** must be invocable. If missing: STOP and tell the user to add it.
-2. `.w2c/scripts/w2c.sh` must exist. If missing: STOP and tell the user:
+1. **requesting-code-review** must be invocable. If missing: STOP. Log `--stage prereq --event stop --detail "missing requesting-code-review"` and tell the user to add it.
+2. `.w2c/scripts/w2c.sh` must exist. If missing: STOP. Log `--stage prereq --event stop --detail "missing .w2c/scripts"` and tell the user:
 
 ```bash
 bash scripts/install-w2c-to-project.sh --repo .
 ```
 
-3. A plan must exist (ROADMAP + at least one slice plan with tasks). If not: STOP and tell the user to run work-to-chores.
+3. A plan must exist (ROADMAP + at least one slice plan with tasks). If not: STOP. Log `--stage prereq --event stop --detail "no plan"` and tell the user to run work-to-chores.
 
 ## Status writes
 
@@ -51,20 +51,33 @@ Never hand-edit STATE.md, QUEUE.md, ROADMAP emojis, or `[ ]` / `[x]` on tasks.
 .w2c/scripts/w2c.sh status
 ```
 
+## Events (local only)
+
+Append-only JSONL at `.w2c/runtime/events.jsonl`. Gitignored. Never commit it. Never hand-edit it. The CLI is the only writer.
+
+```bash
+.w2c/scripts/w2c.sh event --skill do-chores --stage STAGE --event EVENT [--milestone M###] [--slice S##] [--task T##] [--detail "..."]
+.w2c/scripts/w2c.sh events --tail 20 [--skill do-chores]
+```
+
+`--event` is one of: `started`, `complete`, `pass`, `fail`, `stop`, `retry`.
+
+Log at every loop step enter/exit and every hard stop. `complete` and `smoke` also append automatically.
+
 ## Loop
 
 Every unit:
 
-1. **Smoke** — `.w2c/scripts/w2c.sh smoke`. On FAIL: STOP with the report. Do not implement.
-2. **Pick** — `w2c next` with any M/S/T filters from the invocation.
-3. If `--dry-run`: print the unit and STOP.
-4. If no open task: print that and STOP.
+1. **Smoke** — log `--stage smoke --event started`, then `.w2c/scripts/w2c.sh smoke`. On FAIL: log `--stage smoke --event fail` and STOP with the report. Do not implement. On PASS: log `--stage smoke --event pass`.
+2. **Pick** — log `--stage next --event started`, then `w2c next` with any M/S/T filters from the invocation. Include `--milestone` / `--slice` / `--task` on the event when known.
+3. If `--dry-run`: log `--stage dry-run --event complete --detail` with the unit id, print the unit, and STOP.
+4. If no open task: log `--stage next --event stop --detail "no open task"`, print that, and STOP.
 5. **Read order:** STATE.md, ROADMAP.md, active `M###-ROADMAP.md` (guardrails), slice `M###-S##-PLAN.md`, `M###-CONTEXT.md`, latest `contexts/CONTEXTvX.Y.md`, DECISIONS.md.
-6. **Implement** that task only.
-7. **Verify** — run the task’s Verify commands. On failure: find root cause, fix, re-verify. Loop until green.
-8. **Review** — invoke requesting-code-review. On findings: find root cause, fix, re-verify, re-review. Loop until clean.
-9. **Complete** — only then `w2c complete --milestone … --slice … --task …`.
-10. **Report** — task id/title, files changed, verify commands + outcomes, review result, blockers.
+6. **Implement** that task only. Log `--stage implement --event started` before edits and `--stage implement --event complete` after.
+7. **Verify** — log `--stage verify --event started`, then run the task’s Verify commands. On failure: log `--stage verify --event retry`, find root cause, fix, re-verify. Loop until green, then `--stage verify --event pass`.
+8. **Review** — log `--stage review --event started`, then invoke requesting-code-review. On findings: log `--stage review --event retry`, find root cause, fix, re-verify, re-review. Loop until clean, then `--stage review --event pass`.
+9. **Complete** — only then `w2c complete --milestone … --slice … --task …`. Log `--stage complete --event complete` if you need a skill-level marker (the CLI also logs).
+10. **Report** — log `--stage report --event complete`. Then: task id/title, files changed, verify commands + outcomes, review result, blockers.
 11. If `--max-units` is set and units remain and the scope still has open tasks: go to step 1. Otherwise STOP.
 
 No-args always stops after one completed or failed unit.
@@ -78,3 +91,4 @@ Honor Delivery & Guardrails on the milestone ROADMAP: commit cadence (default mi
 - Continuing after smoke FAIL
 - Implementing more than one task when `--max-units` is absent
 - Pushing or opening a PR without explicit user approval
+- Committing `.w2c/runtime/` or hand-editing `events.jsonl`

@@ -62,9 +62,13 @@ python3 .w2c/scripts/w2c.py <command>
 | `milestone-new --slug SLUG` | Allocate id and create plan folder stubs |
 | `decide --scope … --decision … --choice … --rationale …` | Append a DECISIONS.md row |
 | `context-new --major\|--minor` | New `contexts/CONTEXTvX.Y.md` (never overwrite) |
+| `event --skill … --stage … --event …` | Append one local runtime event |
+| `events [--tail N] [--skill …]` | Print last N local events (`0` = all) |
 | `smoke` | Ledger coherence checks |
 
 Agents must not hand-edit STATE.md, QUEUE.md, ROADMAP status emojis, or `[ ]` / `[x]` on tasks.
+
+**Events are local-only.** They live at `.w2c/runtime/events.jsonl`, which is gitignored. Do not commit logs.
 
 ## Source of truth in this playbook
 
