@@ -49,6 +49,7 @@ Lockfile: ~/.playbook-hub-lock.json tracks installed versions.
 Examples:
   install-personal-agents-hub.sh
   install-personal-agents-hub.sh --skills ticket-to-plan,graphify-obsidian
+  install-personal-agents-hub.sh --skills work-to-chores,do-chores
   install-personal-agents-hub.sh --assemble --force
   install-personal-agents-hub.sh --codex --dry-run
 EOF
@@ -89,6 +90,8 @@ if [[ -n "$SOURCE_REPO" ]]; then
 fi
 GSD_ROOT="$PLAYBOOK_ROOT/shared/gsd"
 MANIFEST="$GSD_ROOT/personal-skills.manifest"
+W2C_ROOT="$PLAYBOOK_ROOT/shared/w2c"
+W2C_MANIFEST="$W2C_ROOT/personal-skills.manifest"
 
 # shellcheck source=../shared/gsd/scripts/lib/assemble-skill.sh
 # Source after PLAYBOOK_ROOT resolution so --source-repo works from any cwd/worktree.
@@ -140,8 +143,10 @@ file_hash() {
 }
 
 # --- Parse manifest ---
-parse_manifest() {
+parse_one_manifest() {
+  local file="$1" root="$2"
   local line skill stype spath
+  [[ -f "$file" ]] || return 0
   while IFS= read -r line; do
     [[ -z "$line" || "$line" == \#* ]] && continue
     read -r skill stype spath <<< "$line"
@@ -149,8 +154,13 @@ parse_manifest() {
     if [[ -n "$SKILLS_FILTER" && ",${SKILLS_FILTER}," != *",${skill},"* ]]; then
       continue
     fi
-    echo "$skill $stype $spath"
-  done < "$MANIFEST"
+    printf '%s\t%s\t%s\t%s\n' "$skill" "$stype" "$spath" "$root"
+  done < "$file"
+}
+
+parse_manifest() {
+  parse_one_manifest "$MANIFEST" "$GSD_ROOT"
+  parse_one_manifest "$W2C_MANIFEST" "$W2C_ROOT"
 }
 
 # --- Install functions ---
@@ -181,13 +191,27 @@ install_assembled_skill() {
 }
 
 install_flat_skill() {
-  local skill="$1" src_dir="$2" dest="$3"
-  local src="$GSD_ROOT/$src_dir/SKILL.md"
-  [[ -f "$src" ]] || die "Flat skill source not found: $src"
-  action "COPY $src -> $dest"
+  local skill="$1" src_dir="$2" dest="$3" root="${4:-$GSD_ROOT}"
+  local src="$root/$src_dir"
+  local dest_dir
+  dest_dir="$(dirname "$dest")"
+  [[ -f "$src/SKILL.md" ]] || die "Flat skill source not found: $src/SKILL.md"
+  action "COPY DIR $src -> $dest_dir"
   if [[ "$DRY_RUN" != 1 ]]; then
-    mkdir -p "$(dirname "$dest")"
-    cp "$src" "$dest"
+    mkdir -p "$dest_dir"
+    cp "$src/SKILL.md" "$dest"
+    local f base
+    for f in "$src"/*; do
+      [[ -e "$f" ]] || continue
+      base="$(basename "$f")"
+      [[ "$base" == "SKILL.md" ]] && continue
+      if [[ -d "$f" ]]; then
+        rm -rf "$dest_dir/$base"
+        cp -R "$f" "$dest_dir/"
+      else
+        cp "$f" "$dest_dir/"
+      fi
+    done
   fi
 }
 
@@ -243,13 +267,14 @@ SKIPPED=0
 
 while IFS= read -r entry; do
   [[ -z "$entry" ]] && continue
-  read -r skill stype spath <<< "$entry"
+  IFS=$'\t' read -r skill stype spath src_root <<< "$entry"
+  src_root="${src_root:-$GSD_ROOT}"
 
   hub_dest="$HUB_DIR/$skill/SKILL.md"
 
   # Check source hash for skip logic
   if [[ "$stype" == "flat" ]]; then
-    src_hash="$(file_hash "$GSD_ROOT/$spath/SKILL.md")"
+    src_hash="$(file_hash "$src_root/$spath")"
   elif [[ "$stype" == "assembled" ]]; then
     src_hash="$(file_hash "$GSD_ROOT/$spath")"
   else
@@ -275,7 +300,7 @@ while IFS= read -r entry; do
       install_assembled_skill "$skill" "$spath" "$hub_dest"
       ;;
     flat)
-      install_flat_skill "$skill" "$spath" "$hub_dest"
+      install_flat_skill "$skill" "$spath" "$hub_dest" "$src_root"
       ;;
     external)
       if [[ ! -d "$HUB_DIR/$skill" ]]; then

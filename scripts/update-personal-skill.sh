@@ -23,6 +23,8 @@ Examples:
   update-personal-skill.sh ticket-to-plan
   update-personal-skill.sh do-next-runner --assemble
   update-personal-skill.sh graphify-obsidian --dry-run
+  update-personal-skill.sh work-to-chores
+  update-personal-skill.sh do-chores
 EOF
 }
 

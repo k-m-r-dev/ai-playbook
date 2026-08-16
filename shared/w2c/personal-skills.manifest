@@ -1,0 +1,9 @@
+# personal-skills.manifest — W2C skills (GSD-free planning + execution)
+# Installed by scripts/install-personal-agents-hub.sh into ~/.agents/skills
+#
+# Format: <skill-name> <source-type> <source-relative-path>
+#   source-type: flat
+#   Paths are relative to shared/w2c/
+
+work-to-chores    flat        skills/work-to-chores
+do-chores         flat        skills/do-chores
