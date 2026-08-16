@@ -55,7 +55,9 @@ python3 .w2c/scripts/w2c.py <command>
 | `init` | Create ledger stubs if missing |
 | `status` | Print STATE.md |
 | `next [--milestone M###] [--slice S##] [--task T##]` | Next open task |
-| `complete --milestone M### --slice S## --task T##` | Mark task done; roll slice/milestone status |
+| `complete --milestone M### --slice S## --task T##` | Mark task done (requires `S##-T##-SUMMARY.md`; does not close the slice) |
+| `slice-complete --milestone M### --slice S##` | Mark slice done (requires `S##-UAT.md` + `S##-SUMMARY.md`) |
+| `milestone-complete M###` | Mark milestone DONE (requires `M###-VALIDATION.md` + `M###-SUMMARY.md`) |
 | `set --active-milestone M### [--active-slice S##] [--phase NAME]` | Update active pointer |
 | `milestone-status M### PLANNING\|TODO\|PAUSED\|INPROGRESS\|DONE\|ERROR\|STOP` | Set milestone emoji/status |
 | `next-milestone-id` | Next unused `M###` |
@@ -67,6 +69,8 @@ python3 .w2c/scripts/w2c.py <command>
 | `smoke` | Ledger coherence checks |
 
 Agents must not hand-edit STATE.md, QUEUE.md, ROADMAP status emojis, or `[ ]` / `[x]` on tasks.
+
+**Closeout reports are committed** with the plan folder (`S##-T##-SUMMARY.md`, `S##-UAT.md`, `S##-SUMMARY.md`, `M###-VALIDATION.md`, `M###-SUMMARY.md`). The CLI will not flip the matching status bit until those files exist.
 
 **Events are local-only.** They live at `.w2c/runtime/events.jsonl`, which is gitignored. Do not commit logs.
 
@@ -82,4 +86,4 @@ shared/w2c/
   skills/do-chores/
 ```
 
-Do not author these skills under `shared/gsd/`.
+Author these skills only under `shared/w2c/`.

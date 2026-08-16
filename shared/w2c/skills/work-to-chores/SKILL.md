@@ -109,7 +109,9 @@ Milestone states: PLANNING, TODO, PAUSED, INPROGRESS, DONE, ERROR, STOP.
 
 Each task needs a testing or other verification plan. Embed this execution rule in every slice plan (do **not** execute it here):
 
-- A task is not complete until Verify passes and **requesting-code-review** is clean. Loop fix, verify, review until both succeed. Then `w2c complete`.
+- A task is not complete until Verify passes and **requesting-code-review** is clean. Loop fix, verify, review until both succeed. Write `S##-T##-SUMMARY.md`, then `w2c complete`.
+- When every task in a slice is complete: re-run that slice’s Verify commands, write `S##-UAT.md` and `S##-SUMMARY.md`, then `w2c slice-complete`.
+- When every slice in a milestone is complete: validate the whole milestone, write `M###-VALIDATION.md` and `M###-SUMMARY.md`, then `w2c milestone-complete`.
 
 Default guardrails in each `M###-ROADMAP.md` Delivery and Guardrails table:
 
@@ -147,6 +149,11 @@ Canonical tree:
     M###-ROADMAP.md
     M###-CONTEXT.md
     M###-S##-PLAN.md
+    S##-T##-SUMMARY.md
+    S##-UAT.md
+    S##-SUMMARY.md
+    M###-VALIDATION.md
+    M###-SUMMARY.md
   contexts/CONTEXTvX.Y.md
   DECISIONS.md
   ROADMAP.md

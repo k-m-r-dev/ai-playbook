@@ -67,6 +67,20 @@ class W2CTests(unittest.TestCase):
         write(d / "M001-S01-PLAN.md", SLICE_PLAN)
         w2c.rebuild_ledger(self.tmp)
 
+    def _write_task_summary(self, sid: str, tid: str) -> None:
+        d = self.tmp / ".w2c/plans/M001-demo"
+        write(d / f"{sid}-{tid}-SUMMARY.md", f"# {tid}: summary\n\n## What Happened\n\ntest\n")
+
+    def _write_slice_reports(self, sid: str) -> None:
+        d = self.tmp / ".w2c/plans/M001-demo"
+        write(d / f"{sid}-UAT.md", f"# {sid} UAT\n\n- [ ] walkthrough\n")
+        write(d / f"{sid}-SUMMARY.md", f"# {sid} summary\n\n## Verification\n\nok\n")
+
+    def _write_milestone_reports(self, mid: str) -> None:
+        d = self.tmp / ".w2c/plans/M001-demo"
+        write(d / f"{mid}-VALIDATION.md", f"# Milestone Validation: {mid}\n\nverdict: pass\n")
+        write(d / f"{mid}-SUMMARY.md", f"# {mid}: demo\n\n## What Happened\n\nok\n")
+
     def test_next_skips_checked_and_respects_filters(self) -> None:
         self._seed_open_tasks()
         t = w2c.next_open_task(self.tmp)
@@ -87,14 +101,29 @@ class W2CTests(unittest.TestCase):
         self._seed_open_tasks()
         with self.assertRaises(w2c.W2CError):
             w2c.cmd_complete(self.tmp, "M001", "S01", "T99")
+        with self.assertRaises(w2c.W2CError):
+            w2c.cmd_complete(self.tmp, "M001", "S01", "T01")
+        self._write_task_summary("S01", "T01")
         self.assertEqual(w2c.cmd_complete(self.tmp, "M001", "S01", "T01"), 0)
         plan = (self.tmp / ".w2c/plans/M001-demo/M001-S01-PLAN.md").read_text(encoding="utf-8")
         self.assertIn("- [x] **T01**", plan)
         state = (self.tmp / ".w2c/STATE.md").read_text(encoding="utf-8")
         self.assertIn("T02", state)
+        mroad = (self.tmp / ".w2c/plans/M001-demo/M001-ROADMAP.md").read_text(encoding="utf-8")
+        self.assertIn("- [ ] **S01:", mroad)
+        self._write_task_summary("S01", "T02")
         self.assertEqual(w2c.cmd_complete(self.tmp, "M001", "S01", "T02"), 0)
         road = (self.tmp / ".w2c/ROADMAP.md").read_text(encoding="utf-8")
-        self.assertIn("**M001:", road)
+        self.assertNotIn("DONE", [m.status for m in w2c.parse_milestones(road)])
+        with self.assertRaises(w2c.W2CError):
+            w2c.cmd_slice_complete(self.tmp, "M001", "S01")
+        self._write_slice_reports("S01")
+        self.assertEqual(w2c.cmd_slice_complete(self.tmp, "M001", "S01"), 0)
+        with self.assertRaises(w2c.W2CError):
+            w2c.cmd_milestone_status(self.tmp, "M001", "DONE")
+        self._write_milestone_reports("M001")
+        self.assertEqual(w2c.cmd_milestone_status(self.tmp, "M001", "DONE"), 0)
+        road = (self.tmp / ".w2c/ROADMAP.md").read_text(encoding="utf-8")
         self.assertIn("DONE", [m.status for m in w2c.parse_milestones(road)])
         queue = (self.tmp / ".w2c/QUEUE.md").read_text(encoding="utf-8")
         self.assertNotIn("M001", queue)
@@ -222,6 +251,7 @@ class W2CTests(unittest.TestCase):
 
     def test_complete_logs_under_runtime(self) -> None:
         self._seed_open_tasks()
+        self._write_task_summary("S01", "T01")
         self.assertEqual(w2c.cmd_complete(self.tmp, "M001", "S01", "T01"), 0)
         path = w2c.events_path(self.tmp)
         self.assertTrue(path.is_file())
@@ -230,6 +260,15 @@ class W2CTests(unittest.TestCase):
         self.assertTrue(
             any(r.get("event") == "complete" and r.get("task") == "T01" for r in recs)
         )
+
+    def test_smoke_fails_when_checked_task_lacks_summary(self) -> None:
+        self._seed_open_tasks()
+        plan = self.tmp / ".w2c/plans/M001-demo/M001-S01-PLAN.md"
+        write(plan, w2c.set_task_checked(plan.read_text(encoding="utf-8"), "T01", True))
+        report = w2c.run_smoke(self.tmp)
+        names = {c.name: c for c in report.checks}
+        self.assertEqual(names["closeout-reports"].status, "FAIL")
+        self.assertIn("S01-T01-SUMMARY.md", names["closeout-reports"].detail)
 
 
 if __name__ == "__main__":

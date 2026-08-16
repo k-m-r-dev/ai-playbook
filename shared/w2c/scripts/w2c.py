@@ -60,7 +60,8 @@ QUEUE_TEMPLATE = "# Queue\n"
 
 CONTEXT_BODY = """# Project Knowledge\n\nAppend-only register of project-specific rules, patterns, and lessons learned.\nAgents read this before every unit. Add entries when you discover something worth remembering.\n## Rules\n\n| # | Scope | Rule | Why | Added |\n|---|-------|------|-----|-------|\n\n## Patterns\n\n| # | Pattern | Where | Notes |\n|---|---------|-------|-------|\n\n## Lessons Learned\n\n| # | What Happened | Root Cause | Fix | Scope |\n|---|--------------|------------|-----|-------|\n"""
 
-M_ROADMAP_STUB = """# {mid}: {title}\n\n**Vision:**\n\n## Success Criteria\n\n## Slices\n\n## Boundary Map\n\n## In scope\n\n## Out of scope\n\n## Soft dependency\n\n## Delivery & Guardrails\n| Field | Value |\n| --- | --- |\n| Milestone / planning ID | {mid} |\n| Human-readable scope slug | {slug} |\n| Workstream name | |\n| External ticket ID | |\n| Integration strategy | trunk-direct |\n| Integration branch | |\n| Commit cadence | milestone |\n| Review unit | none |\n| Git/PR checkpoint mode | none |\n| Branch name | N/A |\n| Execution sequence | |\n| Validation commands | |\n| Completion condition | All slices verified; single commit after milestone verification; push only with explicit approval |\n| Size budget (LOC diff) | |\n\n### Guardrails\n- **Commit cadence** — one commit after the milestone is verified unless this table says otherwise. Do not commit per slice by default.\n- **Remote mutation** — no push, PR, or remote git mutation without explicit user approval.\n- **Validation** — run the validation commands in this table before each commit and before each push.\n- **Status writes** — never hand-edit STATE.md, QUEUE.md, ROADMAP status emojis, or task checkboxes. Use `.w2c/scripts/w2c.sh`.\n- **Verify loop** — a task is not complete until its Verify commands pass and requesting-code-review is clean.\n"""
+M_ROADMAP_STUB = """# {mid}: {title}\n\n**Vision:**\n\n## Success Criteria\n\n## Slices\n\n## Boundary Map\n\n## In scope\n\n## Out of scope\n\n## Soft dependency\n\n## Delivery & Guardrails\n| Field | Value |\n| --- | --- |\n| Milestone / planning ID | {mid} |\n| Human-readable scope slug | {slug} |\n| Workstream name | |\n| External ticket ID | |\n| Integration strategy | trunk-direct |\n| Integration branch | |\n| Commit cadence | milestone |\n| Review unit | none |\n| Git/PR checkpoint mode | none |\n| Branch name | N/A |\n| Execution sequence | |\n| Validation commands | |\n| Completion condition | All slices verified; single commit after milestone verification; push only with explicit approval |\n| Size budget (LOC diff) | |\n\n### Guardrails\n- **Commit cadence** — one commit after the milestone is verified unless this table says otherwise. Do not commit per slice by default.\n- **Remote mutation** — no push, PR, or remote git mutation without explicit user approval.\n- **Validation** — run the validation commands in this table before each commit and before each push.\n- **Status writes** — never hand-edit STATE.md, QUEUE.md, ROADMAP status emojis, or task checkboxes. Use `.w2c/scripts/w2c.sh`.\n- **Verify loop** — a task is not complete until its Verify commands pass and requesting-code-review is clean.
+- **Closeout reports** — write `S##-T##-SUMMARY.md` before `complete`; `S##-UAT.md` + `S##-SUMMARY.md` before `slice-complete`; `M###-VALIDATION.md` + `M###-SUMMARY.md` before milestone DONE.\n"""
 
 M_CONTEXT_STUB = """# {mid} — {title}\n\n## Problem\n\n## Solution\n\n## Key Decisions\n\n## Out of Scope\n\n## Validation\n\n## Completion Criteria\n"""
 
@@ -326,6 +327,35 @@ def plan_dir_for(root: Path, mid: str) -> Path | None:
     matches = sorted(plans.glob(f"{mid}-*"))
     dirs = [p for p in matches if p.is_dir()]
     return dirs[0] if dirs else None
+
+
+def report_present(path: Path) -> bool:
+    return path.is_file() and bool(read_text(path).strip())
+
+
+def require_report(path: Path, label: str) -> None:
+    if not report_present(path):
+        raise W2CError(f"missing report {label}")
+
+
+def task_summary_path(plan_dir: Path, sid: str, tid: str) -> Path:
+    return plan_dir / f"{sid}-{tid}-SUMMARY.md"
+
+
+def slice_uat_path(plan_dir: Path, sid: str) -> Path:
+    return plan_dir / f"{sid}-UAT.md"
+
+
+def slice_summary_path(plan_dir: Path, sid: str) -> Path:
+    return plan_dir / f"{sid}-SUMMARY.md"
+
+
+def milestone_validation_path(plan_dir: Path, mid: str) -> Path:
+    return plan_dir / f"{mid}-VALIDATION.md"
+
+
+def milestone_summary_path(plan_dir: Path, mid: str) -> Path:
+    return plan_dir / f"{mid}-SUMMARY.md"
 
 
 def slice_plan_path(root: Path, mid: str, sid: str) -> Path | None:
@@ -692,6 +722,10 @@ def cmd_complete(root: Path, mid: str, sid: str, tid: str) -> int:
     path = slice_plan_path(root, mid, sid)
     if path is None:
         raise W2CError(f"slice plan not found for {mid} {sid}")
+    d = plan_dir_for(root, mid)
+    if d is None:
+        raise W2CError(f"plan folder not found for {mid}")
+    require_report(task_summary_path(d, sid, tid), f"{sid}-{tid}-SUMMARY.md")
     tasks = parse_tasks(path, mid, sid)
     match = [t for t in tasks if t.tid == tid]
     if not match:
@@ -700,37 +734,20 @@ def cmd_complete(root: Path, mid: str, sid: str, tid: str) -> int:
         raise W2CError(f"{tid} is already complete")
     atomic_write(path, set_task_checked(read_text(path), tid, True))
 
-    d = plan_dir_for(root, mid)
-    assert d is not None
-    mroad_path = d / f"{mid}-ROADMAP.md"
     remaining = [t for t in parse_tasks(path, mid, sid) if not t.done]
-    if not remaining and mroad_path.is_file():
-        atomic_write(mroad_path, set_slice_checked(read_text(mroad_path), sid, True))
-
-    slices = parse_slices(read_text(mroad_path)) if mroad_path.is_file() else []
-    all_slices_done = bool(slices) and all(done for _s, done, _t in slices)
     road_path = w2c_dir(root) / "ROADMAP.md"
-    if all_slices_done:
-        atomic_write(road_path, set_milestone_status_in_roadmap(read_text(road_path), mid, "DONE"))
-        nxt = next_open_task(root)
-        overrides = {
-            "active_milestone": f"{nxt.mid}: {nxt.title}" if nxt else "None",
-            "active_slice": nxt.sid if nxt else "None",
-            "phase": "idle" if nxt is None else "executing",
-        }
-    else:
-        nxt = next_open_task(root, milestone=mid)
-        mils = parse_milestones(read_text(road_path))
-        mil = next((m for m in mils if m.mid == mid), None)
-        if mil and mil.status in {"PLANNING", "TODO", "PAUSED"}:
-            atomic_write(
-                road_path, set_milestone_status_in_roadmap(read_text(road_path), mid, "INPROGRESS")
-            )
-        overrides = {
-            "active_milestone": f"{mid}: {mil.title if mil else mid}",
-            "active_slice": nxt.sid if nxt else sid,
-            "phase": "executing",
-        }
+    mils = parse_milestones(read_text(road_path))
+    mil = next((m for m in mils if m.mid == mid), None)
+    if mil and mil.status in {"PLANNING", "TODO", "PAUSED"}:
+        atomic_write(
+            road_path, set_milestone_status_in_roadmap(read_text(road_path), mid, "INPROGRESS")
+        )
+    nxt = next_open_task(root, milestone=mid)
+    overrides = {
+        "active_milestone": f"{mid}: {mil.title if mil else mid}",
+        "active_slice": sid if not remaining else (nxt.sid if nxt else sid),
+        "phase": "executing",
+    }
     rebuild_ledger(root, overrides)
     append_event(
         root,
@@ -743,6 +760,66 @@ def cmd_complete(root: Path, mid: str, sid: str, tid: str) -> int:
         detail=f"complete {mid} {sid} {tid}",
     )
     print(f"complete {mid} {sid} {tid}")
+    if remaining:
+        print(f"OPEN_IN_SLICE {len(remaining)}")
+    elif report_present(slice_uat_path(d, sid)) and report_present(slice_summary_path(d, sid)):
+        print(f"NEED_SLICE_COMPLETE {sid}")
+    else:
+        print(f"NEED_SLICE_REPORTS {sid}")
+    return 0
+
+
+def cmd_slice_complete(root: Path, mid: str, sid: str) -> int:
+    d = plan_dir_for(root, mid)
+    if d is None:
+        raise W2CError(f"plan folder not found for {mid}")
+    path = slice_plan_path(root, mid, sid)
+    if path is None:
+        raise W2CError(f"slice plan not found for {mid} {sid}")
+    tasks = parse_tasks(path, mid, sid)
+    if not tasks:
+        raise W2CError(f"no tasks in {mid} {sid}")
+    open_tasks = [t.tid for t in tasks if not t.done]
+    if open_tasks:
+        raise W2CError(f"open tasks remain in {mid} {sid}: {', '.join(open_tasks)}")
+    for t in tasks:
+        require_report(task_summary_path(d, sid, t.tid), f"{sid}-{t.tid}-SUMMARY.md")
+    require_report(slice_uat_path(d, sid), f"{sid}-UAT.md")
+    require_report(slice_summary_path(d, sid), f"{sid}-SUMMARY.md")
+    mroad_path = d / f"{mid}-ROADMAP.md"
+    if not mroad_path.is_file():
+        raise W2CError(f"missing {mid}-ROADMAP.md")
+    atomic_write(mroad_path, set_slice_checked(read_text(mroad_path), sid, True))
+    slices = parse_slices(read_text(mroad_path))
+    all_slices_done = bool(slices) and all(done for _s, done, _t in slices)
+    road_path = w2c_dir(root) / "ROADMAP.md"
+    mils = parse_milestones(read_text(road_path))
+    mil = next((m for m in mils if m.mid == mid), None)
+    nxt = next_open_task(root, milestone=mid)
+    overrides = {
+        "active_milestone": f"{mid}: {mil.title if mil else mid}",
+        "active_slice": nxt.sid if nxt else sid,
+        "phase": "executing",
+    }
+    rebuild_ledger(root, overrides)
+    append_event(
+        root,
+        skill="do-chores",
+        stage="slice-complete",
+        event="complete",
+        milestone=mid,
+        slice_id=sid,
+        detail=f"slice-complete {mid} {sid}",
+    )
+    print(f"slice-complete {mid} {sid}")
+    if not all_slices_done:
+        print(f"OPEN_SLICES {sum(1 for _s, done, _t in slices if not done)}")
+    elif report_present(milestone_validation_path(d, mid)) and report_present(
+        milestone_summary_path(d, mid)
+    ):
+        print(f"NEED_MILESTONE_COMPLETE {mid}")
+    else:
+        print(f"NEED_MILESTONE_REPORTS {mid}")
     return 0
 
 
@@ -772,6 +849,16 @@ def cmd_milestone_status(root: Path, mid: str, status: str) -> int:
     status = status.upper()
     if status not in STATUS_EMOJI:
         raise W2CError(f"invalid status {status}; use {', '.join(VALID_STATUSES)}")
+    if status == "DONE":
+        d = plan_dir_for(root, mid)
+        if d is None:
+            raise W2CError(f"plan folder not found for {mid}")
+        mroad_path = d / f"{mid}-ROADMAP.md"
+        slices = parse_slices(read_text(mroad_path)) if mroad_path.is_file() else []
+        if not slices or not all(done for _s, done, _t in slices):
+            raise W2CError(f"slices still open in {mid}")
+        require_report(milestone_validation_path(d, mid), f"{mid}-VALIDATION.md")
+        require_report(milestone_summary_path(d, mid), f"{mid}-SUMMARY.md")
     road = w2c_dir(root) / "ROADMAP.md"
     atomic_write(road, set_milestone_status_in_roadmap(read_text(road), mid, status))
     mils = parse_milestones(read_text(road))
@@ -1027,6 +1114,35 @@ def run_smoke(root: Path) -> Report:
     else:
         report.add("decisions-header", "FAIL", "missing table header")
 
+    missing: list[str] = []
+    for mil in mils:
+        d = plan_dir_for(root, mil.mid)
+        if d is None:
+            continue
+        mroad = d / f"{mil.mid}-ROADMAP.md"
+        slices = parse_slices(read_text(mroad)) if mroad.is_file() else []
+        for sid, done, _title in slices:
+            p = d / f"{mil.mid}-{sid}-PLAN.md"
+            if p.is_file():
+                for t in parse_tasks(p, mil.mid, sid):
+                    if t.done and not report_present(task_summary_path(d, sid, t.tid)):
+                        missing.append(f"{sid}-{t.tid}-SUMMARY.md")
+            if done:
+                if not report_present(slice_uat_path(d, sid)):
+                    missing.append(f"{sid}-UAT.md")
+                if not report_present(slice_summary_path(d, sid)):
+                    missing.append(f"{sid}-SUMMARY.md")
+        if mil.status == "DONE":
+            if not report_present(milestone_validation_path(d, mil.mid)):
+                missing.append(f"{mil.mid}-VALIDATION.md")
+            if not report_present(milestone_summary_path(d, mil.mid)):
+                missing.append(f"{mil.mid}-SUMMARY.md")
+    report.add(
+        "closeout-reports",
+        "FAIL" if missing else "PASS",
+        "; ".join(missing[:12]),
+    )
+
     return report
 
 
@@ -1071,10 +1187,17 @@ def build_parser() -> argparse.ArgumentParser:
     n.add_argument("--slice", dest="slice_id", default=None)
     n.add_argument("--task", dest="task_id", default=None)
 
-    c = sub.add_parser("complete", help="mark a task done")
+    c = sub.add_parser("complete", help="mark a task done (requires S##-T##-SUMMARY.md)")
     c.add_argument("--milestone", required=True)
     c.add_argument("--slice", dest="slice_id", required=True)
     c.add_argument("--task", dest="task_id", required=True)
+
+    sc = sub.add_parser("slice-complete", help="mark a slice done (requires UAT + SUMMARY)")
+    sc.add_argument("--milestone", required=True)
+    sc.add_argument("--slice", dest="slice_id", required=True)
+
+    mcp = sub.add_parser("milestone-complete", help="mark milestone DONE (requires VALIDATION + SUMMARY)")
+    mcp.add_argument("mid")
 
     s = sub.add_parser("set", help="update active pointer")
     s.add_argument("--active-milestone", default=None)
@@ -1130,6 +1253,10 @@ def dispatch(args: argparse.Namespace) -> int:
         return cmd_next(root, args.milestone, args.slice_id, args.task_id)
     if cmd == "complete":
         return cmd_complete(root, args.milestone, args.slice_id, args.task_id)
+    if cmd == "slice-complete":
+        return cmd_slice_complete(root, args.milestone, args.slice_id)
+    if cmd == "milestone-complete":
+        return cmd_milestone_status(root, args.mid, "DONE")
     if cmd == "set":
         return cmd_set(root, args.active_milestone, args.active_slice, args.phase)
     if cmd == "milestone-status":

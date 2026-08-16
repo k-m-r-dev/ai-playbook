@@ -1,4 +1,4 @@
-# personal-skills.manifest — W2C skills (GSD-free planning + execution)
+# personal-skills.manifest — W2C skills (markdown planning + execution)
 # Installed by scripts/install-personal-agents-hub.sh into ~/.agents/skills
 #
 # Format: <skill-name> <source-type> <source-relative-path>
