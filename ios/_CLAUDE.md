@@ -9,7 +9,7 @@ Thin playbook base for **Claude Code**, **Cursor**, and **GitHub Copilot**. Muta
 ## Usage
 
 - **`_CLAUDE.md`** (this file) — playbook base; symlink to shared `ai-playbook` — do not edit in client repos
-- **`CLAUDE.md`** — committed project ledger (environment, topography, milestones, learnings)
+- **`CLAUDE.md`** — committed project ledger (environment, session scratch, learnings)
 - **`AGENTS.md`** — committed wrapper (`@_AGENTS.md` + continual-learning sections)
 - **`ARCHITECTURE.md`** — committed wrapper (`@_ARCHITECTURE.md` + `## Project Layout`)
 - **`SESSION_WORKFLOW.md`** — committed wrapper (`@_SESSION_WORKFLOW.md` only)

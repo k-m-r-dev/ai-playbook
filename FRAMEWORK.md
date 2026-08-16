@@ -62,16 +62,16 @@ ai-playbook/
 
 Every client project gets root **`CLAUDE.md`** (committed wrapper) and **`_CLAUDE.md`** (playbook symlink). The wrapper includes `@_CLAUDE.md` plus four live ledger sections:
 
-1. **Project environment** — stack, build/test commands, enabled engines
-2. **Active topography** — graphify hubs (paths into the codebase)
-3. **Milestone state** — GSD-Pi / `.gsd/` progress
-4. **Cross-session learnings** — durable decisions (ruflo-distilled)
+1. **Project environment** — stack, build/test commands
+2. **Active topography** — optional codebase map (when a topography tool is enabled)
+3. **Planning state** — `.gsd/`, `.w2c/`, or neither — set by `configure-client-project.sh --engine gsd|w2c|none`
+4. **Cross-session learnings** — durable decisions in committed `AGENTS.md` / `CLAUDE.md` wrapper sections
 
 The same **wrapper + `_` template** pattern applies to **`AGENTS.md`**, **`ARCHITECTURE.md`**, and **`SESSION_WORKFLOW.md`**:
 
 | Committed wrapper | Playbook symlink | Purpose |
 |-------------------|------------------|---------|
-| `AGENTS.md` | `_AGENTS.md` | `@_AGENTS.md` + continual-learning sections |
+| `AGENTS.md` | `_AGENTS.md` | `@_AGENTS.md` + continual-learning sections (overlay `_AGENTS.md` is **architecture-only** — no GSD, W2C, graphify, or ruflo) |
 | `CLAUDE.md` | `_CLAUDE.md` | `@_CLAUDE.md` + mutable ledger |
 | `ARCHITECTURE.md` | `_ARCHITECTURE.md` | `@_ARCHITECTURE.md` + `## Project Layout` |
 | `SESSION_WORKFLOW.md` | `_SESSION_WORKFLOW.md` | `@_SESSION_WORKFLOW.md` only |
@@ -122,9 +122,10 @@ Merge `config/claude.settings.local.example.json` into `.claude/settings.local.j
 1. Install overlay: `--platform universal`
 2. **Settings → MCP**: add graphify server — e.g. `graphify mcp start` if `uv tool install graphifyy` is on your PATH, or `uvx graphifyy mcp start` without a global install
 3. Enable **gsd-workflow** MCP for GSD skills under `.cursor/skills/`
-4. **Bootstrap GSD** in client repos: `bootstrap-gsd-workflow.sh --init-gsd --patch-mcp --with-do-next` (or use **`configure-client-project`** skill from ai-playbook for guided setup + delivery-profile interview)
-5. **Preflight** (read-only): `scripts/configure-client-check.sh --source-repo <playbook> --client-repo <client>`
-6. Rules in `.cursor/rules/` enforce ledger + token budget
+4. **Configure client** (recommended): exclusive `--engine gsd|w2c|none` via `scripts/configure-client-project.sh` — GSD runs overlay + `bootstrap-gsd-workflow.sh`; W2C runs overlay + `install-w2c-to-project.sh` (default `--mode symlink` for `.w2c/scripts` and `.w2c/templates`); `--engine none` is overlay only. Or use the **`configure-client-project`** skill for a guided interview + single CLI call.
+5. **Manual GSD fallback**: `bootstrap-gsd-workflow.sh --init-gsd --patch-mcp --with-do-next`
+6. **Preflight** (read-only): `scripts/configure-client-check.sh --source-repo <playbook> --client-repo <client>`
+7. Rules in `.cursor/rules/` enforce ledger + token budget
 
 ### GSD milestone execution (after bootstrap)
 
@@ -135,7 +136,7 @@ Merge `config/claude.settings.local.example.json` into `.claude/settings.local.j
 | `do-next` | `do next` | Custom workflow unit (smoke, gates, slice commits) |
 | `do-next-runner` | `$do-next-runner` | Auto-chain do-next units |
 
-Canonical templates: `shared/gsd/`. None work without `.gsd/` bootstrapped.
+Canonical templates: `shared/gsd/`. GSD milestone skills require `.gsd/` bootstrapped; W2C clients use `.w2c/` via `install-w2c-to-project.sh` instead — not every client needs `.gsd/`.
 
 Legacy `.cursorrules` at repo root is optional; prefer `.cursor/rules/`.
 
@@ -190,7 +191,23 @@ bash scripts/install-client-ai-overlay.sh \
   --existing-policy merge
 ```
 
-Managed playbook templates (`_*` root files) are excluded from client git via `.git/info/exclude`. **Committed wrappers** (`AGENTS.md`, `CLAUDE.md`, etc.) are tracked in the client repo.
+Managed playbook templates (`_*` root files) are excluded from client git via `.git/info/exclude`. **Committed wrappers** (`AGENTS.md`, `CLAUDE.md`, etc.) are tracked in the client repo and hold planning-engine text; overlay `_AGENTS.md` / `_CLAUDE.md` stay architecture-only.
+
+**Preferred bring-up** — one exclusive engine via the orchestrator (skill or CLI):
+
+```bash
+bash scripts/configure-client-project.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-api \
+  --platform universal \
+  --engine gsd|w2c|none
+```
+
+| `--engine` | Installs |
+|------------|----------|
+| `gsd` | overlay → `bootstrap-gsd-workflow.sh` (+ optional GSD flags) |
+| `w2c` | overlay → `install-w2c-to-project.sh` (symlink `.w2c/scripts`, `.w2c/templates` by default) |
+| `none` | overlay only — no `.gsd/` or `.w2c/` |
 
 ## Choosing a platform overlay
 

@@ -18,17 +18,22 @@ Canonical source for GSD workflow rules, do-next tooling, and multi-IDE skill te
 ## Readiness ladder
 
 ```text
-0. configure-client-project (skill)  -> guided bring-up from ai-playbook (optional)
-1. install-client-ai-overlay.sh     -> skills (symlinked)
-2. bootstrap-gsd-workflow.sh        -> .gsd/ REQUIRED (--interactive for TTY delivery-profile interview)
-3. $gsd-plan-milestone              -> ROADMAP
-4. do next / $do-next-runner        -> custom workflow execution
-   -- or $gsd-advance-unit          -> pure GSD one unit
+0. configure-client-project (skill or CLI)  -> asks exclusive engine: gsd | w2c | none
+1. install-client-ai-overlay.sh             -> overlay (symlinked _AGENTS.md is architecture-only)
+2. bootstrap-gsd-workflow.sh              -> .gsd/ (GSD-only; --interactive for TTY delivery-profile interview)
+   — or install-w2c-to-project.sh          -> .w2c/ (W2C-only; symlink scripts/templates by default)
+   — or --engine none                      -> overlay only; skip .gsd/ and .w2c/
+3. $gsd-plan-milestone / work to chores    -> ROADMAP or .w2c/ queue
+4. do next / $do-next-runner              -> GSD custom workflow
+   — or $gsd-advance-unit                  -> pure GSD one unit
+   — or do chores                          -> W2C task execution
 ```
 
 ## Configure client project (playbook-operator)
 
-From the **ai-playbook** workspace, use the **`configure-client-project`** skill (personal hub only — not installed in client repos) to discover a target checkout, dry-check gaps, interview delivery settings, run overlay + bootstrap, fill `DELIVERY-PROFILE.md`, and verify before planning.
+From the **ai-playbook** workspace, use the **`configure-client-project`** skill (personal hub only) or **`scripts/configure-client-project.sh`** directly. The skill asks the exclusive planning engine (`gsd` | `w2c` | `none`); the CLI takes `--engine`. After platform and gap questions, the skill makes **one** orchestrator call — it does not invoke overlay/bootstrap/W2C scripts itself.
+
+Engines are **exclusive**: `gsd`, `w2c`, or `none`. With `none`, bring-up is overlay plus the planning-engine wrapper block only — no `.gsd/` or `.w2c/`.
 
 Preflight (read-only):
 
@@ -38,9 +43,25 @@ bash scripts/configure-client-check.sh \
   --client-repo /path/to/client
 ```
 
+Orchestrator (writes):
+
+```bash
+bash scripts/configure-client-project.sh \
+  --source-repo /path/to/ai-playbook \
+  --client-repo /path/to/client \
+  --platform universal \
+  --engine gsd   # or w2c | none
+```
+
+| `--engine` | Runs |
+|------------|------|
+| `gsd` | overlay → `bootstrap-gsd-workflow.sh` (+ optional GSD flags) |
+| `w2c` | overlay → `install-w2c-to-project.sh` (default symlink `.w2c/scripts`, `.w2c/templates`) |
+| `none` | overlay only — no `.gsd/` or `.w2c/`; planning-engine wrapper block only |
+
 Install the skill locally: `bash scripts/update-personal-skill.sh configure-client-project`
 
-Terminal-only delivery-profile interview (no agent): add `--interactive` to bootstrap.
+Terminal-only delivery-profile interview (no agent): add `--interactive` to bootstrap (GSD path only).
 
 ## Bootstrap (client repo)
 

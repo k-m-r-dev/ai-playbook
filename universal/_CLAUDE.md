@@ -10,8 +10,8 @@ Universal playbook base for **Claude Code**, **Cursor**, and **GitHub Copilot**.
 
 | Tool | Primary config | Local engines |
 |------|----------------|---------------|
-| Claude Code | `.claude/settings.json`, `.mcp.json`, hooks | ruflo MCP, graphify hooks |
-| Cursor | `.cursor/rules/`, `.cursor/mcp.json` | graphify MCP, gsd-workflow MCP |
-| VS Code Copilot | `.github/copilot-instructions.md`, `.github/instructions/` | graphify-out reports (no MCP) |
+| Claude Code | `.claude/settings.json`, `.mcp.json`, hooks | optional; none required |
+| Cursor | `.cursor/rules/`, `.cursor/mcp.json` | optional; none required |
+| VS Code Copilot | `.github/copilot-instructions.md`, `.github/instructions/` | optional; none required |
 
 Full setup: `FRAMEWORK.md` in your `ai-playbook` source repo, or `universal/README.md` after overlay install.
