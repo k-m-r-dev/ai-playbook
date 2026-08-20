@@ -57,9 +57,4 @@ For substantive work, follow that playbook: keep `.workflow/current_session_prog
 | flutter-platform-quality | `.claude/skills/flutter-platform-quality/SKILL.md` | Performance, accessibility, concurrency, and release quality |
 | architecture-playbook | `.claude/skills/architecture-playbook/SKILL.md` | Thin routing to `ARCHITECTURE.md` (pairs with root `ARCHITECTURE.md`) |
 | session-progress-workflow | `.claude/skills/session-progress-workflow/SKILL.md` | Session docs, handoff rhythm, `.workflow/*` (pairs with `SESSION_WORKFLOW.md`) |
-| gsd-plan-milestone | `.cursor/skills/gsd-plan-milestone/SKILL.md` | Grill + ROADMAP via gsd-workflow MCP |
-| gsd-advance-unit | `.cursor/skills/gsd-advance-unit/SKILL.md` | One pure GSD unit via MCP |
-| do-next | `.cursor/skills/do-next/SKILL.md` | One unit; smoke + Task Handoff Gate + slice commits |
-| do-next-runner | `.cursor/skills/do-next-runner/SKILL.md` | Auto-chain do-next units; smoke hard-stop |
 
-**GSD prerequisite:** `.gsd/` must exist — run `bootstrap-gsd-workflow.sh --init-gsd --patch-mcp --with-do-next` before any GSD-family skill.

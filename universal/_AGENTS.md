@@ -1,13 +1,13 @@
 # Universal AI Development Template
 
-Stack-agnostic playbook for **backend**, **frontend**, **mobile**, **desktop**, **libraries**, and **CI/CD** repositories. Optimized for local-first context: **graphify** (structure), **ruflo** (memory), **GSD-Pi** (milestones).
+Stack-agnostic playbook for **backend**, **frontend**, **mobile**, **desktop**, **libraries**, and **CI/CD** repositories. Optimized for local-first context: **graphify** (structure), **ruflo** (memory).
 
 ## Supported tools
 
 | Tool | Entry | Notes |
 |------|-------|-------|
 | Claude Code | `CLAUDE.md` | MCP + hooks for ruflo / graphify |
-| Cursor | `.cursor/rules/` | MCP for graph + GSD; rules enforce token budget |
+| Cursor | `.cursor/rules/` | MCP for graphify + ruflo; rules enforce token budget |
 | GitHub Copilot | `.github/copilot-instructions.md` | Markdown-only; uses `graphify-out/` maps |
 
 Optional tools: see `EXTENDING.md` in the ai-playbook repo for how to add Windsurf, Codex CLI, JetBrains AI, etc.
@@ -63,7 +63,6 @@ config/          — configuration
 scripts/         — automation
 .graphify-out/   — local AST graph (gitignored)
 .ruflo/          — local HNSW memory (gitignored)
-.gsd/            — GSD-Pi milestone state (optional)
 .workflow/       — session scratch (overlay install)
 ```
 
@@ -91,9 +90,6 @@ Definitions: `.github/agents/*.agent.md`
 | Structure | `ARCHITECTURE.md` | `15-architecture.mdc` | `architecture-playbook` | `architecture.instructions.md` |
 | Session | `SESSION_WORKFLOW.md` | `20-session-progress.mdc` | `session-progress-workflow` | `session-progress.instructions.md` |
 | Token budget | `CLAUDE.md` | `05-unified-ai-framework.mdc` | hooks / skills | copilot-instructions |
-| GSD planning | `gsd-plan-milestone` | same | same | `gsd-plan-milestone.instructions.md` |
-| GSD execution | `gsd-advance-unit`, `do-next` | same | same | `gsd-advance-unit.instructions.md`, `do-next.instructions.md` |
-| Milestone auto-chain | `do-next-runner` | same | same | `do-next-runner.instructions.md` |
 
 ## Skills (Claude)
 

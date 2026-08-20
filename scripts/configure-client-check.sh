@@ -95,6 +95,12 @@ status "DISCOVER" "platform guess: $platform"
 status "DISCOVER" "project style: $style"
 status "DISCOVER" "default branch: $branch"
 
+if [[ -d "$CLIENT_REPO/.gsd" ]]; then
+  status "DISCOVER" "default engine: gsd"
+else
+  status "DISCOVER" "default engine: w2c"
+fi
+
 if [[ -f "$CLIENT_REPO/composer.json" ]]; then status "DISCOVER" "stack marker: composer.json (PHP)"
 elif [[ -f "$CLIENT_REPO/package.json" ]]; then status "DISCOVER" "stack marker: package.json (Node)"
 elif [[ -f "$CLIENT_REPO/pubspec.yaml" ]]; then status "DISCOVER" "stack marker: pubspec.yaml (Flutter)"
@@ -173,6 +179,25 @@ if [[ -f "$CLIENT_REPO/.workflow/scripts/playbook-gsd-health.sh" ]]; then
   status "OK" ".workflow/scripts/playbook-gsd-health.sh"
 else
   status "MISSING" ".workflow/scripts/playbook-gsd-health.sh (bootstrap --with-do-next)"
+fi
+
+# ── W2C ─────────────────────────────────────────────────────────────────────
+if [[ -f "$CLIENT_REPO/.w2c/scripts/w2c.py" ]]; then
+  status "OK" ".w2c/scripts/w2c.py"
+else
+  status "MISSING" ".w2c/scripts/w2c.py"
+fi
+
+if [[ -d "$CLIENT_REPO/.w2c/templates" ]]; then
+  status "OK" ".w2c/templates/"
+else
+  status "MISSING" ".w2c/templates/"
+fi
+
+if [[ -f "$CLIENT_REPO/.github/instructions/work-to-chores.instructions.md" ]]; then
+  status "OK" ".github/instructions/work-to-chores.instructions.md"
+else
+  status "MISSING" ".github/instructions/work-to-chores.instructions.md"
 fi
 
 # ── Delegate to bootstrap --check when playbook scripts exist ───────────────

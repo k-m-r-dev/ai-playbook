@@ -339,14 +339,23 @@ bash scripts/bootstrap-playbooks-from-aitools.sh \
 1. Fill in **`CLAUDE.md`** (stack, topography, milestone, learnings).
 2. Customize **`ARCHITECTURE.md`** for the real module map.
 3. Set build/test commands in **`AGENTS.md`**.
-4. **Bootstrap GSD** (if using milestone workflow):
+4. **Configure client** — pick one exclusive planning engine (not every client needs `.gsd/`):
 
 ```bash
-bash scripts/bootstrap-gsd-workflow.sh \
+bash scripts/configure-client-project.sh \
   --source-repo ~/private/ai-playbook \
   --client-repo ~/projects/my-app \
-  --init-gsd --with-do-next --patch-mcp
+  --platform universal \
+  --engine gsd   # or w2c | none
 ```
+
+| `--engine` | Next step |
+|------------|-----------|
+| `gsd` | `$gsd-plan-milestone` after bootstrap completes |
+| `w2c` | `work to chores` / `do chores` (`.w2c/` ledger) |
+| `none` | Overlay only — fill ledgers manually |
+
+Manual GSD fallback: `bootstrap-gsd-workflow.sh --init-gsd --with-do-next --patch-mcp`
 
 5. Optional local engines:
 
@@ -401,15 +410,20 @@ bash shared/gsd/scripts/install-workflow-tools.sh \
   --repo /path/to/client
 ```
 
-## GSD milestone workflow (Cursor, Claude, Copilot)
+## Planning engines (GSD or W2C)
 
-**Readiness ladder** — skills and `.gsd/` runtime are installed from shared, not baked into platform trees:
+Choose **one** exclusive engine at configure time — GSD, W2C, or none (`--engine none` = overlay only). Not every client needs `.gsd/`.
+
+**Preferred:** `scripts/configure-client-project.sh` or the **`configure-client-project`** skill (playbook-operator).
+
+### GSD path
+
+**Readiness ladder** — GSD skills and `.gsd/` runtime are installed from shared, not baked into platform trees:
 
 ```text
-1. Personal hub OR client install-from-shared
-   install-personal-agents-hub.sh             → ~/.agents/skills (+ Cursor/Claude bridges)
-   — or install-workflow-tools.sh --project   → client .cursor / .claude / .github skills
-2. bootstrap-gsd-workflow.sh                  → .gsd/ runtime (required for GSD)
+0. configure-client-project (skill or CLI --engine gsd)
+1. Personal hub OR install-workflow-tools.sh --project
+2. bootstrap-gsd-workflow.sh                  → .gsd/ runtime (GSD-only)
 3. $gsd-plan-milestone                        → ROADMAP
 4. do next / $do-next-runner                  → custom workflow execution
    — or $gsd-advance-unit                     → pure GSD one unit
@@ -422,13 +436,45 @@ bash shared/gsd/scripts/install-workflow-tools.sh \
 | `do-next` | `do next` / `$do-next` | Custom workflow unit (smoke, gates, slice commits) |
 | `do-next-runner` | `$do-next-runner` | Auto-chain do-next units |
 
+GSD requires **gsd-workflow** MCP in `.mcp.json` (and `.cursor/mcp.json` for Cursor-only servers). Uses Cursor/Claude billing — not terminal `/gsd` unless you opt in.
+
+### W2C path
+
+**Readiness ladder** — work-to-chores / do-chores (no `.gsd/`):
+
+```text
+0. configure-client-project (skill or CLI --engine w2c)
+   — or install-w2c-to-project.sh directly
+1. install-client-ai-overlay.sh             → overlay + Copilot instructions
+2. install-w2c-to-project.sh                → .w2c/ ledger (symlink scripts/templates by default)
+3. work to chores                           → plan → ROADMAP / QUEUE
+4. do chores                                → execute next task
+```
+
+```bash
+bash scripts/configure-client-project.sh \
+  --source-repo ~/private/ai-playbook \
+  --client-repo ~/projects/my-app \
+  --platform universal \
+  --engine w2c
+```
+
+W2C uses `install-w2c-to-project.sh` with default `--mode symlink` for `.w2c/scripts` and `.w2c/templates` into the playbook checkout. Ledger files (`STATE.md`, plans) stay real files in the client.
+
+| Skill | Trigger | Role |
+| --- | --- | --- |
+| `work-to-chores` | `work to chores` | Decompose work into `.w2c/` queue |
+| `do-chores` | `do chores` | Execute next W2C task |
+
+### Skill install surfaces
+
 | IDE | Personal hub | Client project |
 | --- | --- | --- |
 | Cursor | `~/.cursor/skills/<skill>` → `~/.agents/skills/<skill>` | `.cursor/skills/<skill>/SKILL.md` |
 | Claude | `~/.claude/skills/<skill>` → hub | `.claude/skills/<skill>/` |
 | Copilot | *(no personal hub)* | `.github/instructions/<skill>.instructions.md` via `--project --copilot` |
 
-Requires **gsd-workflow** MCP in `.mcp.json` (and `.cursor/mcp.json` for Cursor-only servers). Uses Cursor/Claude billing — not terminal `/gsd` unless you opt in. Canonical templates: **`shared/gsd/`** — see **[shared/gsd/README.md](shared/gsd/README.md)** · **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**.
+Canonical templates: **`shared/gsd/`** (GSD) · **`shared/w2c/`** (W2C) — see **[shared/gsd/README.md](shared/gsd/README.md)** · **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**.
 
 ## Add tools or patch existing overlays
 
