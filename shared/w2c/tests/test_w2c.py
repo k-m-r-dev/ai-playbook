@@ -34,6 +34,14 @@ SLICE ID: S01
 - [ ] **T02**: Second task.
   - Verify: python3 -c 'print(2)'
 </tasks>
+
+## Git Operation Plan
+| Field | Value |
+| --- | --- |
+| Isolation mode | branch |
+| Local branch | DEMO-1 |
+| Remote branch | DEMO-1 |
+| Follow | milestone Git Operation Plan — do not invent a different branch |
 """
 
 M_ROADMAP = """# M001: demo
@@ -41,6 +49,19 @@ M_ROADMAP = """# M001: demo
 ## Slices
 
 - [ ] **S01: Foundation** `risk:low` `depends:[]`
+
+## Git Operation Plan
+| Field | Value |
+| --- | --- |
+| Isolation mode | branch |
+| Local branch | DEMO-1 |
+| Remote branch | DEMO-1 |
+| Isolation scope | ticket |
+| Setup when | first-do-chores |
+| Plan commit | required-before-isolation |
+| Reuse policy | reuse-if-same-ticket-else-stop |
+| Worktree skill | n/a |
+| Push rule | after milestone verification + explicit user approval; push ref must equal Remote branch |
 """
 
 
@@ -269,6 +290,60 @@ class W2CTests(unittest.TestCase):
         names = {c.name: c for c in report.checks}
         self.assertEqual(names["closeout-reports"].status, "FAIL")
         self.assertIn("S01-T01-SUMMARY.md", names["closeout-reports"].detail)
+
+
+    def test_smoke_fails_without_git_operation_plan(self) -> None:
+        self._seed_open_tasks()
+        d = self.tmp / ".w2c/plans/M001-demo"
+        write(
+            d / "M001-ROADMAP.md",
+            "# M001: demo\n\n## Slices\n\n- [ ] **S01: Foundation** `risk:low` `depends:[]`\n",
+        )
+        report = w2c.run_smoke(self.tmp)
+        names = {c.name: c for c in report.checks}
+        self.assertEqual(names["git-operation-plan-milestone"].status, "FAIL")
+        self.assertTrue(report.failed())
+
+    def test_smoke_fails_when_local_remote_branch_mismatch(self) -> None:
+        self._seed_open_tasks()
+        d = self.tmp / ".w2c/plans/M001-demo"
+        road = (d / "M001-ROADMAP.md").read_text(encoding="utf-8")
+        write(d / "M001-ROADMAP.md", road.replace("| Remote branch | DEMO-1 |", "| Remote branch | OTHER |"))
+        report = w2c.run_smoke(self.tmp)
+        names = {c.name: c for c in report.checks}
+        self.assertEqual(names["git-operation-plan-milestone"].status, "FAIL")
+        self.assertTrue(report.failed())
+
+    def test_smoke_fails_when_slice_mode_mismatches_milestone(self) -> None:
+        self._seed_open_tasks()
+        d = self.tmp / ".w2c/plans/M001-demo"
+        plan = (d / "M001-S01-PLAN.md").read_text(encoding="utf-8")
+        write(
+            d / "M001-S01-PLAN.md",
+            plan.replace("| Isolation mode | branch |", "| Isolation mode | worktree |"),
+        )
+        report = w2c.run_smoke(self.tmp)
+        names = {c.name: c for c in report.checks}
+        self.assertEqual(names["git-operation-plan-slice"].status, "FAIL")
+        self.assertTrue(report.failed())
+
+    def test_smoke_fails_worktree_without_skill_field(self) -> None:
+        self._seed_open_tasks()
+        d = self.tmp / ".w2c/plans/M001-demo"
+        road = (d / "M001-ROADMAP.md").read_text(encoding="utf-8")
+        road = road.replace("| Isolation mode | branch |", "| Isolation mode | worktree |")
+        road = road.replace("| Worktree skill | n/a |", "| Worktree skill | missing |")
+        write(d / "M001-ROADMAP.md", road)
+        # Keep slice aligned on mode/branches for milestone-focused assertion
+        plan = (d / "M001-S01-PLAN.md").read_text(encoding="utf-8")
+        write(
+            d / "M001-S01-PLAN.md",
+            plan.replace("| Isolation mode | branch |", "| Isolation mode | worktree |"),
+        )
+        report = w2c.run_smoke(self.tmp)
+        names = {c.name: c for c in report.checks}
+        self.assertEqual(names["git-operation-plan-milestone"].status, "FAIL")
+        self.assertIn("using-git-worktrees", names["git-operation-plan-milestone"].detail)
 
 
 if __name__ == "__main__":

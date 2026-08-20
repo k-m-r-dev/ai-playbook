@@ -134,10 +134,12 @@ ensure_gitignore() {
     fi
     missing+=("$marker")
   done
-  [[ "${#missing[@]}" -gt 0 ]] || return
+  [[ "${#missing[@]}" -gt 0 ]] || return 0
 
   {
-    [[ -f "$gi" && -s "$gi" && "$(tail -c1 "$gi" 2>/dev/null || true)" != $'\n' ]] && printf '\n'
+    if [[ -f "$gi" && -s "$gi" && "$(tail -c1 "$gi" 2>/dev/null || true)" != $'\n' ]]; then
+      printf '\n'
+    fi
     printf '\n# w2c generated and playbook-linked files\n'
     printf '%s\n' "${missing[@]}"
   } >> "$gi"

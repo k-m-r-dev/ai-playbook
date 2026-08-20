@@ -2,7 +2,9 @@
 
 Say `work to chores` (or `/work-to-chores`) and paste a ticket, spec, or a short description of the work. The agent will interview you, check the codebase, and write a plan under `.w2c/`. It will not change product code.
 
-**Need first:** grilling and brainstorming. If either is missing, the skill stops and tells you to add it.
+During planning it asks whether to use a **git worktree** or a **branch**, confirms the remote/local branch name (ticket id like `MOR-252`, or a slug if there is no ticket), and writes a **Git Operation Plan** into every milestone and slice plan. After you approve the plan it asks to commit only `.w2c/` plan files onto that branch (no push). Isolation itself starts on the first `do-chores`.
+
+**Need first:** grilling and brainstorming. If either is missing, the skill stops and tells you to add it. If you choose worktree mode, **using-git-worktrees** must also be invocable.
 
 **Need in the repo:** `.w2c/scripts/` from `scripts/install-w2c-to-project.sh`.
 

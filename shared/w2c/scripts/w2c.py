@@ -60,8 +60,65 @@ QUEUE_TEMPLATE = "# Queue\n"
 
 CONTEXT_BODY = """# Project Knowledge\n\nAppend-only register of project-specific rules, patterns, and lessons learned.\nAgents read this before every unit. Add entries when you discover something worth remembering.\n## Rules\n\n| # | Scope | Rule | Why | Added |\n|---|-------|------|-----|-------|\n\n## Patterns\n\n| # | Pattern | Where | Notes |\n|---|---------|-------|-------|\n\n## Lessons Learned\n\n| # | What Happened | Root Cause | Fix | Scope |\n|---|--------------|------------|-----|-------|\n"""
 
-M_ROADMAP_STUB = """# {mid}: {title}\n\n**Vision:**\n\n## Success Criteria\n\n## Slices\n\n## Boundary Map\n\n## In scope\n\n## Out of scope\n\n## Soft dependency\n\n## Delivery & Guardrails\n| Field | Value |\n| --- | --- |\n| Milestone / planning ID | {mid} |\n| Human-readable scope slug | {slug} |\n| Workstream name | |\n| External ticket ID | |\n| Integration strategy | trunk-direct |\n| Integration branch | |\n| Commit cadence | milestone |\n| Review unit | none |\n| Git/PR checkpoint mode | none |\n| Branch name | N/A |\n| Execution sequence | |\n| Validation commands | |\n| Completion condition | All slices verified; single commit after milestone verification; push only with explicit approval |\n| Size budget (LOC diff) | |\n\n### Guardrails\n- **Commit cadence** — one commit after the milestone is verified unless this table says otherwise. Do not commit per slice by default.\n- **Remote mutation** — no push, PR, or remote git mutation without explicit user approval.\n- **Validation** — run the validation commands in this table before each commit and before each push.\n- **Status writes** — never hand-edit STATE.md, QUEUE.md, ROADMAP status emojis, or task checkboxes. Use `.w2c/scripts/w2c.sh`.\n- **Verify loop** — a task is not complete until its Verify commands pass and requesting-code-review is clean.
-- **Closeout reports** — write `S##-T##-SUMMARY.md` before `complete`; `S##-UAT.md` + `S##-SUMMARY.md` before `slice-complete`; `M###-VALIDATION.md` + `M###-SUMMARY.md` before milestone DONE.\n"""
+M_ROADMAP_STUB = """# {mid}: {title}
+
+**Vision:**
+
+## Success Criteria
+
+## Slices
+
+## Boundary Map
+
+## In scope
+
+## Out of scope
+
+## Soft dependency
+
+## Delivery & Guardrails
+| Field | Value |
+| --- | --- |
+| Milestone / planning ID | {mid} |
+| Human-readable scope slug | {slug} |
+| Workstream name | |
+| External ticket ID | |
+| Integration strategy | trunk-direct |
+| Integration branch | |
+| Commit cadence | milestone |
+| Review unit | none |
+| Git/PR checkpoint mode | none |
+| Isolation mode | |
+| Branch name | |
+| Execution sequence | |
+| Validation commands | |
+| Completion condition | All slices verified; single commit after milestone verification; push only with explicit approval |
+| Size budget (LOC diff) | |
+
+## Git Operation Plan
+| Field | Value |
+| --- | --- |
+| Isolation mode | |
+| Local branch | |
+| Remote branch | |
+| Isolation scope | ticket |
+| Setup when | first-do-chores |
+| Plan commit | required-before-isolation |
+| Reuse policy | reuse-if-same-ticket-else-stop |
+| Worktree skill | |
+| Push rule | after milestone verification + explicit user approval; push ref must equal Remote branch |
+
+### Guardrails
+- **Commit cadence** — one commit after the milestone is verified unless this table says otherwise. Do not commit per slice by default.
+- **Remote mutation** — no push, PR, or remote git mutation without explicit user approval.
+- **Git isolation** — honor Isolation mode (`worktree` or `branch` only). Local branch must equal Remote branch (ticket id or confirmed slug). Setup on first `do-chores`; reuse the same ticket isolation across milestones.
+- **Plan commit** — commit `.w2c/` plan/ledger files (never `runtime/`, never product code) onto the ticket branch before isolation so a worktree can see the ledger. No push without approval.
+- **No force git** — never force-reset, force-push, or delete worktrees/branches. Dirty or unexpected existing branch/worktree → hard stop and ask.
+- **Validation** — run the validation commands in this table before each commit and before each push.
+- **Status writes** — never hand-edit STATE.md, QUEUE.md, ROADMAP status emojis, or task checkboxes. Use `.w2c/scripts/w2c.sh`.
+- **Verify loop** — a task is not complete until its Verify commands pass and requesting-code-review is clean.
+- **Closeout reports** — write `S##-T##-SUMMARY.md` before `complete`; `S##-UAT.md` + `S##-SUMMARY.md` before `slice-complete`; `M###-VALIDATION.md` + `M###-SUMMARY.md` before milestone DONE.
+"""
 
 M_CONTEXT_STUB = """# {mid} — {title}\n\n## Problem\n\n## Solution\n\n## Key Decisions\n\n## Out of Scope\n\n## Validation\n\n## Completion Criteria\n"""
 
@@ -1010,6 +1067,52 @@ def cmd_context_new(root: Path, major: bool, minor: bool) -> int:
     return 0
 
 
+
+def parse_git_operation_fields(text: str) -> dict[str, str]:
+    """Parse | Field | Value | rows under ## Git Operation Plan."""
+    m = re.search(r"^## Git Operation Plan\s*$", text, re.M)
+    if not m:
+        return {}
+    rest = text[m.end():]
+    next_h = re.search(r"^## ", rest, re.M)
+    if next_h:
+        rest = rest[: next_h.start()]
+    fields: dict[str, str] = {}
+    for line in rest.splitlines():
+        mm = re.match(r"^\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|\s*$", line)
+        if not mm:
+            continue
+        key = mm.group(1).strip()
+        val = mm.group(2).strip()
+        if not key or key.lower() == "field" or set(key) <= {"-"}:
+            continue
+        fields[key] = val
+    return fields
+
+
+def validate_git_operation_plan(fields: dict[str, str], *, require_worktree_skill: bool = True) -> list[str]:
+    """Return human-readable problems; empty list means OK."""
+    problems: list[str] = []
+    if not fields:
+        return ["missing ## Git Operation Plan section or table"]
+    mode = fields.get("Isolation mode", "").strip().lower()
+    local = fields.get("Local branch", "").strip()
+    remote = fields.get("Remote branch", "").strip()
+    if mode not in ("worktree", "branch"):
+        problems.append(f"Isolation mode must be worktree|branch (got {mode!r})")
+    if not local or local.upper() == "N/A":
+        problems.append("Local branch empty or N/A")
+    if not remote or remote.upper() == "N/A":
+        problems.append("Remote branch empty or N/A")
+    if local and remote and local != remote:
+        problems.append(f"Local branch {local!r} != Remote branch {remote!r}")
+    if require_worktree_skill and mode == "worktree":
+        skill = fields.get("Worktree skill", "")
+        if "using-git-worktrees" not in skill:
+            problems.append("worktree mode requires Worktree skill mentioning using-git-worktrees")
+    return problems
+
+
 def run_smoke(root: Path) -> Report:
     report = Report()
     wdir = w2c_dir(root)
@@ -1113,6 +1216,52 @@ def run_smoke(root: Path) -> Report:
         report.add("decisions-header", "PASS")
     else:
         report.add("decisions-header", "FAIL", "missing table header")
+
+
+    git_m_ok = True
+    git_m_detail: list[str] = []
+    git_s_ok = True
+    git_s_detail: list[str] = []
+    for mil in mils:
+        d = plan_dir_for(root, mil.mid)
+        if d is None:
+            continue
+        mroad = d / f"{mil.mid}-ROADMAP.md"
+        if not mroad.is_file():
+            continue
+        mtext = read_text(mroad)
+        mfields = parse_git_operation_fields(mtext)
+        mprobs = validate_git_operation_plan(mfields)
+        if mprobs:
+            git_m_ok = False
+            git_m_detail.append(f"{mil.mid}: {'; '.join(mprobs)}")
+        for sid, _done, _title in parse_slices(mtext):
+            p = d / f"{mil.mid}-{sid}-PLAN.md"
+            if not p.is_file():
+                continue
+            sfields = parse_git_operation_fields(read_text(p))
+            # Slice mirror: mode/branches required; Worktree skill optional on slice
+            sprobs = validate_git_operation_plan(sfields, require_worktree_skill=False)
+            if sprobs:
+                git_s_ok = False
+                git_s_detail.append(f"{mil.mid}/{sid}: {'; '.join(sprobs)}")
+            elif mfields and sfields:
+                for key in ("Isolation mode", "Local branch", "Remote branch"):
+                    mv = mfields.get(key, "").strip()
+                    sv = sfields.get(key, "").strip()
+                    if mv and sv and mv != sv:
+                        git_s_ok = False
+                        git_s_detail.append(f"{mil.mid}/{sid}: {key} mismatch milestone={mv!r} slice={sv!r}")
+    report.add(
+        "git-operation-plan-milestone",
+        "PASS" if git_m_ok else "FAIL",
+        "; ".join(git_m_detail[:8]),
+    )
+    report.add(
+        "git-operation-plan-slice",
+        "PASS" if git_s_ok else "FAIL",
+        "; ".join(git_s_detail[:8]),
+    )
 
     missing: list[str] = []
     for mil in mils:
