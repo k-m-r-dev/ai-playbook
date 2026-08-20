@@ -35,26 +35,6 @@
             "source": "local-template/architecture-playbook",
             "sourceType": "local",
             "computedHash": "template-v1-architecture-playbook"
-        },
-        "gsd-plan-milestone": {
-            "source": "local-template/gsd-plan-milestone",
-            "sourceType": "local",
-            "computedHash": "template-v1-gsd-plan-milestone"
-        },
-        "gsd-advance-unit": {
-            "source": "local-template/gsd-advance-unit",
-            "sourceType": "local",
-            "computedHash": "template-v1-gsd-advance-unit"
-        },
-        "do-next": {
-            "source": "local-template/do-next",
-            "sourceType": "local",
-            "computedHash": "template-v1-do-next"
-        },
-        "do-next-runner": {
-            "source": "local-template/do-next-runner",
-            "sourceType": "local",
-            "computedHash": "template-v1-do-next-runner"
         }
     }
 }

@@ -48,6 +48,16 @@ for f in flutter-riverpod/_AGENTS.md flutter-bloc/_AGENTS.md ios/_AGENTS.md andr
 done
 pass "_AGENTS.md packs have no GSD workflow rows"
 
+for skill in do-next do-next-runner gsd-advance-unit gsd-plan-milestone; do
+  for overlay in universal ios android flutter-riverpod flutter-bloc; do
+    [[ ! -e "$ROOT/$overlay/.cursor/skills/$skill" ]] || fail "GSD skill still in $overlay/.cursor/skills/$skill"
+  done
+  if grep -q "\"$skill\"" "$ROOT/universal/skills-lock.json"; then
+    fail "GSD skill $skill still in universal/skills-lock.json"
+  fi
+done
+pass "overlay cursor skills and universal lock have no GSD entries"
+
 for f in flutter-riverpod/_CLAUDE.md flutter-bloc/_CLAUDE.md ios/_CLAUDE.md android/_CLAUDE.md universal/_CLAUDE.md; do
   if grep -E '## graphify|openGSD|gsd-workflow MCP' "$ROOT/$f"; then
     fail "engine required in $f"
@@ -74,10 +84,11 @@ fi
 pass "w2c rejects GSD flags"
 
 before="$(find "$TMP" -type f | wc -l | tr -d ' ')"
-bash "$ORCH" --source-repo "$ROOT" --client-repo "$TMP" --platform universal --engine w2c --dry-run >/dev/null
+dry="$(bash "$ORCH" --source-repo "$ROOT" --client-repo "$TMP" --platform universal --engine w2c --dry-run 2>&1)"
 after="$(find "$TMP" -type f | wc -l | tr -d ' ')"
 [[ "$before" == "$after" ]] || fail "dry-run wrote files"
 [[ ! -d "$TMP/.w2c" ]] || fail "dry-run created .w2c"
+echo "$dry" | grep -q -- '--no-require-gsd' || fail "w2c dry-run missing --no-require-gsd"
 pass "dry-run w2c writes nothing"
 
 bash "$ORCH" --source-repo "$ROOT" --client-repo "$TMP" --platform universal --engine none --check >/dev/null
@@ -105,7 +116,8 @@ W2C_FIX="$(mktemp -d)"
 git -C "$W2C_FIX" init -q
 git -C "$W2C_FIX" config user.email test@example.com
 git -C "$W2C_FIX" config user.name test
-bash "$ORCH" --source-repo "$ROOT" --client-repo "$W2C_FIX" --platform universal --engine w2c >/dev/null
+w2c_out="$(bash "$ORCH" --source-repo "$ROOT" --client-repo "$W2C_FIX" --platform universal --engine w2c 2>&1)"
+echo "$w2c_out" | grep -q 'bootstrap GSD' && fail "w2c overlay warned to bootstrap GSD"
 grep -q 'work-to-chores' "$W2C_FIX/AGENTS.md" || fail "w2c planning text missing"
 [[ -L "$W2C_FIX/.w2c/scripts" ]] || fail ".w2c/scripts should be symlink"
 [[ -L "$W2C_FIX/.w2c/templates" ]] || fail ".w2c/templates should be symlink"

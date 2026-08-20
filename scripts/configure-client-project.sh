@@ -158,7 +158,11 @@ fi
 
 if [[ "$DRY_RUN" == 1 ]]; then
   info "dry-run engine=$ENGINE platform=$PLATFORM client=$CLIENT_REPO"
-  info "would: install-client-ai-overlay.sh --platform $PLATFORM --mode $MODE --existing-policy $EXISTING_POLICY"
+  overlay_dry="would: install-client-ai-overlay.sh --platform $PLATFORM --mode $MODE --existing-policy $EXISTING_POLICY"
+  if [[ "$ENGINE" != gsd ]]; then
+    overlay_dry+=" --no-require-gsd"
+  fi
+  info "$overlay_dry"
   case "$ENGINE" in
     gsd) info "would: bootstrap-gsd-workflow.sh (GSD flags as passed)" ;;
     w2c) info "would: install-w2c-to-project.sh --repo $CLIENT_REPO --mode $MODE" ;;
@@ -173,12 +177,17 @@ git -C "$CLIENT_REPO" rev-parse --git-dir >/dev/null 2>&1 || die "client is not 
 if overlay_installed; then
   info "overlay already installed for platform=$PLATFORM"
 else
-  bash "$SOURCE_REPO/scripts/install-client-ai-overlay.sh" \
-    --source-repo "$SOURCE_REPO" \
-    --client-repo "$CLIENT_REPO" \
-    --platform "$PLATFORM" \
-    --mode "$MODE" \
-    --existing-policy "$EXISTING_POLICY"
+    overlay_args=(
+      --source-repo "$SOURCE_REPO"
+      --client-repo "$CLIENT_REPO"
+      --platform "$PLATFORM"
+      --mode "$MODE"
+      --existing-policy "$EXISTING_POLICY"
+    )
+    if [[ "$ENGINE" != gsd ]]; then
+      overlay_args+=(--no-require-gsd)
+    fi
+    bash "$SOURCE_REPO/scripts/install-client-ai-overlay.sh" "${overlay_args[@]}"
 fi
 
 case "$ENGINE" in

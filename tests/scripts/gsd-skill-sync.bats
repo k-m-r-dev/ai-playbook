@@ -37,35 +37,26 @@ teardown() {
   [[ "$output" == "---" ]]
 }
 
-@test "platform Cursor skills match universal for the four GSD skills" {
-  for overlay in "${OVERLAYS[@]}"; do
-    for skill in "${SKILLS[@]}"; do
-      run diff -q \
-        "$PLAYBOOK_DIR/universal/.cursor/skills/$skill/SKILL.md" \
-        "$PLAYBOOK_DIR/$overlay/.cursor/skills/$skill/SKILL.md"
-      [ "$status" -eq 0 ]
-    done
-  done
-}
-
-@test "platform Copilot instructions match universal for the four GSD skills" {
-  for overlay in "${OVERLAYS[@]}"; do
-    for skill in "${SKILLS[@]}"; do
-      run diff -q \
-        "$PLAYBOOK_DIR/universal/.github/instructions/$skill.instructions.md" \
-        "$PLAYBOOK_DIR/$overlay/.github/instructions/$skill.instructions.md"
-      [ "$status" -eq 0 ]
-    done
-  done
-}
-
-@test "Claude skill dirs remain symlinks to Cursor on all overlays" {
+@test "overlays do not ship GSD Cursor skills" {
   for overlay in universal "${OVERLAYS[@]}"; do
     for skill in "${SKILLS[@]}"; do
-      path="$PLAYBOOK_DIR/$overlay/.claude/skills/$skill"
-      [ -L "$path" ]
-      target="$(readlink "$path")"
-      [[ "$target" == "../../.cursor/skills/$skill" ]]
+      [ ! -e "$PLAYBOOK_DIR/$overlay/.cursor/skills/$skill" ]
+    done
+  done
+}
+
+@test "overlays do not ship GSD Copilot instructions" {
+  for overlay in universal "${OVERLAYS[@]}"; do
+    for skill in "${SKILLS[@]}"; do
+      [ ! -e "$PLAYBOOK_DIR/$overlay/.github/instructions/$skill.instructions.md" ]
+    done
+  done
+}
+
+@test "overlays do not ship GSD Claude skills" {
+  for overlay in universal "${OVERLAYS[@]}"; do
+    for skill in "${SKILLS[@]}"; do
+      [ ! -e "$PLAYBOOK_DIR/$overlay/.claude/skills/$skill" ]
     done
   done
 }
