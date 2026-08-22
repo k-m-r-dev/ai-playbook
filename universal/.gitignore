@@ -1,5 +1,5 @@
 
 # w2c generated and playbook-linked files
-.w2c/scripts/
-.w2c/templates/
+.w2c/scripts
+.w2c/templates
 .w2c/runtime/
