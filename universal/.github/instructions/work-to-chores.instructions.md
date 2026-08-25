@@ -22,19 +22,23 @@ Read `USAGE.md` in this folder for the plain-English invocation.
 Before Stage 1:
 
 1. Confirm **grilling** and **brainstorming** are invocable in this environment.
-2. Confirm `.w2c/scripts/w2c.sh` (or `w2c.py`) exists in the current repo.
+2. Confirm `w2c` is on PATH (`command -v w2c`).
 
 If grilling or brainstorming is missing: **STOP**. Log `--stage prereq --event stop --detail "missing grilling|brainstorming"`. Tell the user which skill is missing and ask them to add it. Do not invent a substitute interview.
 
-If scripts are missing: **STOP**. Log `--stage prereq --event stop --detail "missing .w2c/scripts"`. Tell the user to run:
+If `w2c` is missing: **STOP**. Log `--stage prereq --event stop --detail "missing w2c CLI"`. Tell the user to run:
 
 ```bash
-bash scripts/install-w2c-to-project.sh --repo .
+curl -fsSL https://raw.githubusercontent.com/OpenW2C/w2c/main/install.sh | bash
+# or:
+pipx install git+https://github.com/OpenW2C/w2c.git && w2c install-skills
 ```
 
-(From the playbook repo that contains that script.) Then they re-invoke this skill.
+Then they re-invoke this skill.
 
-If `.w2c/` ledger files are missing, run `.w2c/scripts/w2c.sh init`.
+If `.w2c/` ledger files are missing, run `w2c init`.
+
+Read `.w2c/config.toml`: `track = true` means plan artifacts are committed; default `track = false` keeps `.w2c/` gitignored.
 
 **Worktree skill (mode-dependent):** as soon as Isolation mode is chosen as `worktree` (Stage 3), confirm **using-git-worktrees** is invocable the same way other skills are checked. If missing: **STOP**. Log `--stage prereq --event stop --detail "missing using-git-worktrees"`. Tell the user to add the Superpowers using-git-worktrees skill. Do not invent a substitute worktree procedure. Re-check before Stage 5 handoff if mode is still `worktree`.
 
@@ -43,12 +47,12 @@ If `.w2c/` ledger files are missing, run `.w2c/scripts/w2c.sh init`.
 Use the CLI only for STATE.md, QUEUE.md, ROADMAP emojis, task checkboxes, DECISIONS rows, and new CONTEXT versions:
 
 ```bash
-.w2c/scripts/w2c.sh status
-.w2c/scripts/w2c.sh decide --scope ... --decision ... --choice ... --rationale ...
-.w2c/scripts/w2c.sh context-new --minor   # or --major
-.w2c/scripts/w2c.sh next-milestone-id
-.w2c/scripts/w2c.sh milestone-new --slug ...
-.w2c/scripts/w2c.sh milestone-status M001 PLANNING
+w2c status
+w2c decide --scope ... --decision ... --choice ... --rationale ...
+w2c context-new --minor   # or --major
+w2c next-milestone-id
+w2c milestone-new --slug ...
+w2c milestone-status M001 PLANNING
 ```
 
 Never hand-edit those status bits. Authoring plan content (vision, tasks, verify commands, Git Operation Plan) is allowed after Stage 5 approval.
@@ -58,8 +62,8 @@ Never hand-edit those status bits. Authoring plan content (vision, tasks, verify
 Append-only JSONL at `.w2c/runtime/events.jsonl`. Gitignored. Never commit it. Never hand-edit it. The CLI is the only writer.
 
 ```bash
-.w2c/scripts/w2c.sh event --skill work-to-chores --stage STAGE --event EVENT [--milestone M###] [--slice S##] [--task T##] [--detail "..."]
-.w2c/scripts/w2c.sh events --tail 20 [--skill work-to-chores]
+w2c event --skill work-to-chores --stage STAGE --event EVENT [--milestone M###] [--slice S##] [--task T##] [--detail "..."]
+w2c events --tail 20 [--skill work-to-chores]
 ```
 
 `--event` is one of: `started`, `complete`, `pass`, `fail`, `stop`, `retry`.
@@ -198,13 +202,15 @@ Canonical tree:
   QUEUE.md
 ```
 
-Use `w2c milestone-new` then fill ROADMAP/CONTEXT/slice plan content (including Git Operation Plan). Formats: follow the templates in `shared/w2c/templates/` and `shared/w2c/README.md`. Milestone files are `M###-ROADMAP.md` + `M###-CONTEXT.md` + slice plans - never a second `M###-PLAN.md`.
+Use `w2c milestone-new` then fill ROADMAP/CONTEXT/slice plan content (including Git Operation Plan). Formats: follow the templates in this repo (`templates/`) and README.md. Milestone files are `M###-ROADMAP.md` + `M###-CONTEXT.md` + slice plans - never a second `M###-PLAN.md`.
 
 `w2c milestone-status` / `w2c set` for pointers. `w2c smoke` before handing off to do-chores — smoke **fails** if Git Operation Plan is missing, Isolation mode is not `worktree`/`branch`, Local≠Remote, branch is empty/`N/A`, or worktree mode lacks `using-git-worktrees` in Worktree skill. Log `--stage write --event complete` when smoke is clean.
 
-### Plan-commit gate (required before handoff)
+### Plan-commit gate (only when `track = true`)
 
-After smoke PASS, ask for explicit approval to put plan artifacts on the ticket branch so first `do-chores` isolation can see `.w2c/`:
+If `.w2c/config.toml` has `track = false` (default): **skip this gate**. Do not commit `.w2c/` or Copilot W2C instruction files. Log `--stage plan-commit --event complete --detail skipped-untracked`. Then tell the user: run `do-chores` next; isolation setup happens on the first execution unit. If a worktree is used, do-chores will symlink or copy `.w2c/` into it.
+
+If `track = true`: after smoke PASS, ask for explicit approval to put plan artifacts on the ticket branch so first `do-chores` isolation can see `.w2c/`:
 
 1. If the local branch named Remote branch does not exist: create it from current HEAD only when the working tree is clean **or** dirty only with the new `.w2c/` plan/ledger files. Otherwise **STOP** and ask.
 2. Check out that branch under the same clean/dirty rules. Never force-checkout, force-reset, or delete branches/worktrees.

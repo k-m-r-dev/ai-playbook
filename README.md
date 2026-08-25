@@ -443,12 +443,14 @@ GSD requires **gsd-workflow** MCP in `.mcp.json` (and `.cursor/mcp.json` for Cur
 **Readiness ladder** — work-to-chores / do-chores (no `.gsd/`):
 
 ```text
-0. configure-client-project (skill or CLI --engine w2c)
-   — or install-w2c-to-project.sh directly
-1. install-client-ai-overlay.sh             → overlay + Copilot instructions
-2. install-w2c-to-project.sh                → .w2c/ ledger (symlink scripts/templates by default)
-3. work to chores                           → plan → ROADMAP / QUEUE
-4. do chores                                → execute next task
+0. Install w2c from https://github.com/OpenW2C/w2c
+   curl -fsSL https://raw.githubusercontent.com/OpenW2C/w2c/main/install.sh | bash
+   # or: pipx install git+https://github.com/OpenW2C/w2c.git && w2c install-skills
+1. configure-client-project (skill or CLI --engine w2c)
+2. install-client-ai-overlay.sh             → overlay
+3. w2c init                                 → .w2c/ ledger + Copilot instructions
+4. work to chores                           → plan → ROADMAP / QUEUE
+5. do chores                                → execute next task
 ```
 
 ```bash
@@ -459,7 +461,7 @@ bash scripts/configure-client-project.sh \
   --engine w2c
 ```
 
-W2C uses `install-w2c-to-project.sh` with default `--mode symlink` for `.w2c/scripts` and `.w2c/templates` into the playbook checkout. Ledger files (`STATE.md`, plans) stay real files in the client.
+Requires `w2c` on PATH. `configure-client-project.sh --engine w2c` runs `w2c init` (ledger, gitignore, Copilot instruction files). Ledger files (`STATE.md`, plans) stay in the client `.w2c/` directory.
 
 | Skill | Trigger | Role |
 | --- | --- | --- |
@@ -474,7 +476,7 @@ W2C uses `install-w2c-to-project.sh` with default `--mode symlink` for `.w2c/scr
 | Claude | `~/.claude/skills/<skill>` → hub | `.claude/skills/<skill>/` |
 | Copilot | *(no personal hub)* | `.github/instructions/<skill>.instructions.md` via `--project --copilot` |
 
-Canonical templates: **`shared/gsd/`** (GSD) · **`shared/w2c/`** (W2C) — see **[shared/gsd/README.md](shared/gsd/README.md)** · **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**.
+Canonical templates: **`shared/gsd/`** (GSD). W2C lives in [OpenW2C/w2c](https://github.com/OpenW2C/w2c). See **[shared/gsd/README.md](shared/gsd/README.md)** · **[shared/gsd/ADDING-SKILLS.md](shared/gsd/ADDING-SKILLS.md)**.
 
 ## Add tools or patch existing overlays
 

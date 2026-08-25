@@ -13,8 +13,10 @@ Usage:
     [--mode symlink] [--existing-policy merge] \
     [--check] [--dry-run] \
     [--init-gsd] [--with-do-next] [--patch-mcp] [--harness-context] [--force]
+    [--track]
 
 GSD flags are valid only with --engine gsd.
+--track is valid only with --engine w2c (commit .w2c ledger + Copilot W2C files).
 EOF
 }
 
@@ -34,6 +36,7 @@ WITH_DO_NEXT=0
 PATCH_MCP=0
 HARNESS_CONTEXT=0
 FORCE=0
+TRACK=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -50,6 +53,7 @@ while [[ $# -gt 0 ]]; do
     --patch-mcp) PATCH_MCP=1; shift ;;
     --harness-context) HARNESS_CONTEXT=1; shift ;;
     --force) FORCE=1; shift ;;
+    --track) TRACK=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) die "Unknown arg: $1" ;;
   esac
@@ -74,6 +78,9 @@ esac
 
 if [[ "$ENGINE" != gsd && ( "$INIT_GSD" == 1 || "$WITH_DO_NEXT" == 1 || "$PATCH_MCP" == 1 || "$HARNESS_CONTEXT" == 1 ) ]]; then
   die "GSD flags are only valid with --engine gsd"
+fi
+if [[ "$TRACK" == 1 && "$ENGINE" != w2c ]]; then
+  die "--track is only valid with --engine w2c"
 fi
 
 case "$PLATFORM" in
@@ -112,7 +119,7 @@ blocks = {
 ## Planning engine
 
 - This repo uses **work-to-chores / do-chores** (`.w2c/`).
-- The Python CLI (`.w2c/scripts/w2c.py`) is the only writer of STATE/QUEUE/ROADMAP status bits and task checkboxes.
+- The Python CLI (`w2c` on PATH) is the only writer of STATE/QUEUE/ROADMAP status bits and task checkboxes.
 - Do not use GSD, `$gsd-plan-milestone`, or do-next.
 <!-- END PLAYBOOK:PLANNING-ENGINE -->
 """,
@@ -165,7 +172,7 @@ if [[ "$DRY_RUN" == 1 ]]; then
   info "$overlay_dry"
   case "$ENGINE" in
     gsd) info "would: bootstrap-gsd-workflow.sh (GSD flags as passed)" ;;
-    w2c) info "would: install-w2c-to-project.sh --repo $CLIENT_REPO --mode $MODE" ;;
+    w2c) info "would: w2c --root $CLIENT_REPO init$([ "$TRACK" == 1 ] && printf ' --track')" ;;
     none) info "would: skip GSD and W2C installers" ;;
   esac
   info "would: patch AGENTS.md and CLAUDE.md planning-engine markers"
@@ -201,9 +208,16 @@ case "$ENGINE" in
     bash "$SOURCE_REPO/scripts/bootstrap-gsd-workflow.sh" "${args[@]}"
     ;;
   w2c)
-    args=(--source-repo "$SOURCE_REPO" --repo "$CLIENT_REPO" --mode "$MODE")
-    [[ "$FORCE" == 1 ]] && args+=(--force)
-    bash "$SOURCE_REPO/scripts/install-w2c-to-project.sh" "${args[@]}"
+    if ! command -v w2c >/dev/null 2>&1; then
+      die "w2c CLI not on PATH. Install from https://github.com/OpenW2C/w2c
+  curl -fsSL https://raw.githubusercontent.com/OpenW2C/w2c/main/install.sh | bash
+  # or: pipx install git+https://github.com/OpenW2C/w2c.git && w2c install-skills"
+    fi
+    if [[ "$TRACK" == 1 ]]; then
+      w2c --root "$CLIENT_REPO" init --track
+    else
+      w2c --root "$CLIENT_REPO" init
+    fi
     ;;
   none) ;;
 esac

@@ -23,8 +23,6 @@ Examples:
   update-personal-skill.sh ticket-to-plan
   update-personal-skill.sh do-next-runner --assemble
   update-personal-skill.sh graphify-obsidian --dry-run
-  update-personal-skill.sh work-to-chores
-  update-personal-skill.sh do-chores
 EOF
 }
 
@@ -35,6 +33,13 @@ shift
 
 case "$SKILL" in
   -h|--help) usage; exit 0 ;;
+esac
+
+case "$SKILL" in
+  work-to-chores|do-chores)
+    printf 'Error: %s lives in https://github.com/OpenW2C/w2c\nInstall with:\n  curl -fsSL https://raw.githubusercontent.com/OpenW2C/w2c/main/install.sh | bash\nor: pipx install git+https://github.com/OpenW2C/w2c.git && w2c install-skills\n' "$SKILL" >&2
+    exit 1
+    ;;
 esac
 
 [[ -x "$INSTALLER" || -f "$INSTALLER" ]] || {

@@ -36,10 +36,12 @@ Scope only narrows the queue. It does not drain a milestone unless `--max-units`
 ## Prerequisites (hard stop)
 
 1. **requesting-code-review** must be invocable. If missing: STOP. Log `--stage prereq --event stop --detail "missing requesting-code-review"` and tell the user to add it.
-2. `.w2c/scripts/w2c.sh` must exist. If missing: STOP. Log `--stage prereq --event stop --detail "missing .w2c/scripts"` and tell the user:
+2. `w2c` must be on PATH. If missing: STOP. Log `--stage prereq --event stop --detail "missing w2c CLI"` and tell the user:
 
 ```bash
-bash scripts/install-w2c-to-project.sh --repo .
+curl -fsSL https://raw.githubusercontent.com/OpenW2C/w2c/main/install.sh | bash
+# or:
+pipx install git+https://github.com/OpenW2C/w2c.git && w2c install-skills
 ```
 
 3. A plan must exist (ROADMAP + at least one slice plan with tasks). If not: STOP. Log `--stage prereq --event stop --detail "no plan"` and tell the user to run work-to-chores.
@@ -51,12 +53,12 @@ bash scripts/install-w2c-to-project.sh --repo .
 Never hand-edit STATE.md, QUEUE.md, ROADMAP emojis, or `[ ]` / `[x]` on tasks.
 
 ```bash
-.w2c/scripts/w2c.sh smoke
-.w2c/scripts/w2c.sh next [--milestone M###] [--slice S##] [--task T##]
-.w2c/scripts/w2c.sh complete --milestone M### --slice S## --task T##
-.w2c/scripts/w2c.sh slice-complete --milestone M### --slice S##
-.w2c/scripts/w2c.sh milestone-complete M###
-.w2c/scripts/w2c.sh status
+w2c smoke
+w2c next [--milestone M###] [--slice S##] [--task T##]
+w2c complete --milestone M### --slice S## --task T##
+w2c slice-complete --milestone M### --slice S##
+w2c milestone-complete M###
+w2c status
 ```
 
 ## Events (local only)
@@ -64,17 +66,17 @@ Never hand-edit STATE.md, QUEUE.md, ROADMAP emojis, or `[ ]` / `[x]` on tasks.
 Append-only JSONL at `.w2c/runtime/events.jsonl`. Gitignored. Never commit it. Never hand-edit it. The CLI is the only writer.
 
 ```bash
-.w2c/scripts/w2c.sh event --skill do-chores --stage STAGE --event EVENT [--milestone M###] [--slice S##] [--task T##] [--detail "..."]
-.w2c/scripts/w2c.sh events --tail 20 [--skill do-chores]
+w2c event --skill do-chores --stage STAGE --event EVENT [--milestone M###] [--slice S##] [--task T##] [--detail "..."]
+w2c events --tail 20 [--skill do-chores]
 ```
 
 `--event` is one of: `started`, `complete`, `pass`, `fail`, `stop`, `retry`.
 
 Log at every loop step enter/exit and every hard stop. `complete`, `slice-complete`, `milestone-complete`, and `smoke` also append automatically.
 
-## Report files (committed)
+## Report files
 
-Write these in the milestone plan folder. They are ledger, not runtime logs.
+Write these in the milestone plan folder. They are ledger, not runtime logs. Commit them only when `.w2c/config.toml` has `track = true`.
 
 **`S##-T##-SUMMARY.md`** — frontmatter (`id`, `parent`, `milestone`, `key_files`, `verification_result`, `completed_at`) plus What Happened, Verification, Verification Evidence table, Deviations, Known Issues, Files Created/Modified.
 
@@ -90,7 +92,7 @@ Write these in the milestone plan folder. They are ledger, not runtime logs.
 
 Every unit:
 
-1. **Smoke** — log `--stage smoke --event started`, then `.w2c/scripts/w2c.sh smoke`. On FAIL: log `--stage smoke --event fail` and STOP with the report. Do not implement. On PASS: log `--stage smoke --event pass`. Smoke requires a valid Git Operation Plan on milestone and slice plans.
+1. **Smoke** — log `--stage smoke --event started`, then `w2c smoke`. On FAIL: log `--stage smoke --event fail` and STOP with the report. Do not implement. On PASS: log `--stage smoke --event pass`. Smoke requires a valid Git Operation Plan on milestone and slice plans.
 2. **Pick** — log `--stage next --event started`, then `w2c next` with any M/S/T filters from the invocation. Include `--milestone` / `--slice` / `--task` on the event when known.
 3. If `--dry-run`: log `--stage dry-run --event complete --detail` with the unit id, print the unit, read Git Operation Plan and report Isolation mode + Local/Remote branch + whether isolate setup would run, and STOP. Do **not** create a worktree, switch branch, or implement.
 4. If no open task: log `--stage next --event stop --detail "no open task"`, print that, and STOP.
@@ -122,7 +124,11 @@ Then:
 1. **Reuse policy** — if a worktree or local branch already exists with the exact planned name and clearly belongs to this ticket: reuse it. If dirty with unrelated files, or history looks unexpected: **STOP** and ask. Never force-reset, force-push, or delete worktrees/branches.
 2. **Mode `worktree`** — confirm using-git-worktrees is invocable; if missing, STOP. Invoke **using-git-worktrees** and follow it exactly to create or reuse an isolated worktree for Local branch (project `.worktrees/<branch>` when that convention applies). Continue all subsequent work for this ticket in that worktree path. Do not nest a worktree inside an existing linked worktree (skill Step 0).
 3. **Mode `branch`** — ensure the current checkout is on Local branch. Create the branch from current HEAD only if it is missing and the tree is clean (or only expected `.w2c` plan dirt after asking). Never force.
-4. **Ledger visible** — before the first product edit, verify `.w2c/plans/...` for this milestone is present in the isolation workspace. If not: **STOP** and tell the user the plan-commit gate from work-to-chores was skipped; do not copy ad-hoc unless the user explicitly directs a recovery.
+4. **Ledger visible** — before the first product edit, verify `.w2c/plans/...` for this milestone is present in the isolation workspace. If not:
+   - Read `worktree_ledger` from `.w2c/config.toml` (`symlink` default, or `copy`).
+   - Find the primary checkout `.w2c/` (the repo you started from).
+   - If mode is `worktree` and the worktree lacks `.w2c/`: create a **symlink** to the primary `.w2c/` when `worktree_ledger = symlink`; otherwise **copy** the directory. Do not git-commit the ledger unless `track = true`.
+   - If the primary `.w2c/` is also missing: **STOP** and tell the user to run `w2c init` or `w2c migrate adopt`.
 
 Isolation is **ticket-scoped**: later milestones/slices with the same Remote branch reuse the same worktree/branch.
 

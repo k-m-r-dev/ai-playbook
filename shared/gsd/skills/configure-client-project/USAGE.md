@@ -120,7 +120,7 @@ bash scripts/configure-client-project.sh \
 | Skill not found | Run `update-personal-skill.sh configure-client-project`; reload Cursor. |
 | Engine choice feels wrong | Check `[DISCOVER]` lines from `configure-client-check.sh`; choose `w2c` for new non-GSD projects, `gsd` when preserving existing `.gsd`, or `none` for overlay only. |
 | GSD gaps shown after W2C/none | Expected; the skill reports them as `SKIPPED` because they are outside the selected engine. |
-| W2C files missing after choosing W2C | Re-run the skill or orchestrator with `--engine w2c`; do not call `install-w2c-to-project.sh` directly from the skill. |
+| W2C files missing after choosing W2C | Re-run the skill or orchestrator with `--engine w2c`; do not call `w2c init` separately; the orchestrator does to-project.sh` directly from the skill. |
 | Profile still has placeholders after GSD | Re-run the skill, choose `gsd`, and approve delivery-profile configuration. |
 
 ## What this skill does NOT do

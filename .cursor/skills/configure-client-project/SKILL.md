@@ -42,14 +42,14 @@ Scripts (from `PLAYBOOK_ROOT`):
 
 - `scripts/configure-client-check.sh` - read-only preflight.
 - `scripts/configure-client-project.sh` - **only command this skill executes for configuration writes**.
-- `scripts/install-w2c-to-project.sh` - W2C installer called by the orchestrator for `--engine w2c`.
+- PATH `w2c` from [OpenW2C/w2c](https://github.com/OpenW2C/w2c) — required for `--engine w2c` (`w2c init`).
 - `scripts/install-client-ai-overlay.sh` - overlay installer called by the orchestrator.
 - `scripts/bootstrap-gsd-workflow.sh` - GSD bootstrap called by the orchestrator for `--engine gsd`.
 - `scripts/merge-mcp-template.sh` - MCP merge helper called by the orchestrator/bootstrap.
 
 ## Phase 0 - Preconditions
 
-1. Confirm `PLAYBOOK_ROOT` contains `shared/gsd/` and `scripts/configure-client-project.sh`.
+1. Confirm `PLAYBOOK_ROOT` contains `shared/gsd/` and `scripts/configure-client-project.sh`. For `--engine w2c`, confirm `w2c` is on PATH (https://github.com/OpenW2C/w2c).
 2. Require **absolute** `CLIENT_REPO`; verify directory exists.
 3. Verify `CLIENT_REPO` is a git repo (`git -C "$CLIENT_REPO" rev-parse --git-dir`).
 4. If `CLIENT_REPO` is inside `PLAYBOOK_ROOT`, stop unless user explicitly opts in to dogfood.
@@ -80,8 +80,10 @@ Capture every `[OK]`, `[MISSING]`, `[PLACEHOLDER]`, `[CONFIGURED]`, and `[DISCOV
 | `playbook-gsd-mcp` | MISSING | do-next claim bridge not in `.mcp.json` |
 | `do-next-health` | MISSING | Health script for do-next not installed |
 | `workflow-dir` | MISSING | `.workflow/` session scripts missing |
-| `w2c-scripts` | MISSING | W2C command scripts are not installed |
+| `w2c-cli` | MISSING | `w2c` is not on PATH |
+| `w2c-ledger` | MISSING | `.w2c/STATE.md` is missing |
 | `w2c-copilot` | MISSING | W2C Copilot instructions are not installed |
+| `w2c-tracked` | PLACEHOLDER | `.w2c/` ledger is committed; ask migrate untrack vs keep `--track` |
 
 Also surface `[DISCOVER]` lines such as platform guess, GSD presence, W2C presence, and default engine. If there are **zero in-scope gaps**, say so and ask whether to run a no-op verification or stop.
 
@@ -184,8 +186,15 @@ List GSD gaps as out-of-scope `SKIPPED`, not as questions.
 
 Install full W2C now?
 
-1. **yes** - run the orchestrator with `--engine w2c`; it calls `install-w2c-to-project.sh` and uses symlink mode to match overlay mode. `[recommended]`
+1. **yes** - run the orchestrator with `--engine w2c`; it requires PATH `w2c` and runs `w2c init`. `[recommended]`
 2. **no** - do not configure W2C; ask whether the engine should be `none` instead before proceeding.
+
+If yes, ask: commit W2C ledger and Copilot instruction files to git?
+
+1. **no** - default; `.w2c/` and Copilot W2C instruction files are gitignored. `[recommended]`
+2. **yes** - pass `--track` so plans/STATE and Copilot instruction files can be committed (`.w2c/runtime/` stays ignored).
+
+If check reported `w2c-tracked` (PLACEHOLDER): the ledger is already in git. Ask whether to run `w2c migrate untrack` now (backup + gitignore + `git rm --cached`; other clones need `w2c migrate adopt` before pulling) `[recommended]`, or keep tracking with `--track`.
 
 ### 3F - None questions (engine = none only)
 
@@ -217,12 +226,13 @@ bash "$PLAYBOOK_ROOT/scripts/configure-client-project.sh" \
   --engine gsd|w2c|none \
   --mode symlink \
   --existing-policy merge \
+  # W2C only: [--track]
   # GSD only: [--init-gsd] [--with-do-next] [--patch-mcp] [--harness-context] [--force]
 ```
 
-- Never call `install-client-ai-overlay.sh`, `bootstrap-gsd-workflow.sh`, `install-w2c-to-project.sh`, or `merge-mcp-template.sh` directly from this skill.
+- Never call `install-client-ai-overlay.sh`, `bootstrap-gsd-workflow.sh`, or `merge-mcp-template.sh` directly from this skill. For W2C, the orchestrator calls `w2c init` (PATH `w2c` required).
 - Never pass GSD flags with `--engine w2c` or `--engine none`.
-- For W2C, default install mode is symlink mode because the orchestrator receives the same `--mode symlink` as overlay.
+- For W2C, default is gitignore of `.w2c/` and Copilot W2C files; pass `--track` only when the user opted in.
 - Do **not** pass `--interactive` to bootstrap. The skill interviews delivery profile values in chat.
 
 ## Phase 5 - Write DELIVERY-PROFILE (engine = gsd only, if approved)
@@ -289,7 +299,7 @@ Print:
 
 - "Merge playbook-gsd into `.mcp.json` manually..."
 - "Edit paths in the template yourself..."
-- "Run `install-w2c-to-project.sh` yourself..."
+- "Run `w2c init` yourself..."
 
 Those are only valid under **Deferred** when the user chose **no**.
 

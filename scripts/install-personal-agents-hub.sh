@@ -49,7 +49,6 @@ Lockfile: ~/.playbook-hub-lock.json tracks installed versions.
 Examples:
   install-personal-agents-hub.sh
   install-personal-agents-hub.sh --skills ticket-to-plan,graphify-obsidian
-  install-personal-agents-hub.sh --skills work-to-chores,do-chores
   install-personal-agents-hub.sh --assemble --force
   install-personal-agents-hub.sh --codex --dry-run
 EOF
@@ -90,14 +89,17 @@ if [[ -n "$SOURCE_REPO" ]]; then
 fi
 GSD_ROOT="$PLAYBOOK_ROOT/shared/gsd"
 MANIFEST="$GSD_ROOT/personal-skills.manifest"
-W2C_ROOT="$PLAYBOOK_ROOT/shared/w2c"
-W2C_MANIFEST="$W2C_ROOT/personal-skills.manifest"
-
 # shellcheck source=../shared/gsd/scripts/lib/assemble-skill.sh
 # Source after PLAYBOOK_ROOT resolution so --source-repo works from any cwd/worktree.
 [[ -f "$GSD_ROOT/scripts/lib/assemble-skill.sh" ]] && source "$GSD_ROOT/scripts/lib/assemble-skill.sh"
 
 [[ -f "$MANIFEST" ]] || die "Manifest not found: $MANIFEST"
+
+case ",$SKILLS_FILTER," in
+  *,work-to-chores,*|*,do-chores,*)
+    die "work-to-chores / do-chores live in https://github.com/OpenW2C/w2c (curl install.sh | bash, or pipx install git+https://github.com/OpenW2C/w2c.git && w2c install-skills)"
+    ;;
+esac
 
 # --- Lockfile helpers ---
 lockfile_read() {
@@ -160,7 +162,6 @@ parse_one_manifest() {
 
 parse_manifest() {
   parse_one_manifest "$MANIFEST" "$GSD_ROOT"
-  parse_one_manifest "$W2C_MANIFEST" "$W2C_ROOT"
 }
 
 # --- Install functions ---

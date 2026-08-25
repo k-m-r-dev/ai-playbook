@@ -11,17 +11,22 @@ TMP2=""
 SCRIPTS_SRC=""
 FIX=""
 W2C_FIX=""
-cleanup() { rm -rf "$TMP" "$TMP2" "$SCRIPTS_SRC" "$FIX" "$W2C_FIX"; }
+W2C_TRACK=""
+W2C_TEST_HOME="$(mktemp -d)"
+export W2C_CONFIG="$W2C_TEST_HOME/config.toml"
+export W2C_DATA_HOME="$W2C_TEST_HOME/data"
+cleanup() { rm -rf "$TMP" "$TMP2" "$SCRIPTS_SRC" "$FIX" "$W2C_FIX" "$W2C_TRACK" "$W2C_TEST_HOME"; }
 trap cleanup EXIT
 git -C "$TMP" init -q
 git -C "$TMP" config user.email test@example.com
 git -C "$TMP" config user.name test
 
-out="$(bash "$CHECK" --source-repo "$ROOT" --client-repo "$TMP" || true)"
+CHECK_PATH="/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:/usr/local/bin"
+out="$(PATH="$CHECK_PATH" bash "$CHECK" --source-repo "$ROOT" --client-repo "$TMP" || true)"
 echo "$out" | grep -q '\[DISCOVER\] default engine: w2c' || fail "expected default engine w2c"
-echo "$out" | grep -q '\[MISSING\] .w2c/scripts/w2c.py' || fail "expected missing w2c.py"
+echo "$out" | grep -q '\[MISSING\] w2c CLI on PATH' || fail "expected missing w2c CLI"
+echo "$out" | grep -q '\[MISSING\] .w2c/STATE.md' || fail "expected missing STATE.md"
 echo "$out" | grep -q '\[MISSING\] .github/instructions/work-to-chores.instructions.md' || fail "expected missing w2c copilot"
-echo "$out" | grep -q '\[MISSING\] .w2c/templates/' || fail "expected missing w2c templates"
 pass "check reports w2c gaps and default w2c"
 
 mkdir -p "$TMP/.gsd"
@@ -33,13 +38,11 @@ TMP2="$(mktemp -d)"
 git -C "$TMP2" init -q
 git -C "$TMP2" config user.email test@example.com
 git -C "$TMP2" config user.name test
-SCRIPTS_SRC="$(mktemp -d)"
-echo '# w2c stub' > "$SCRIPTS_SRC/w2c.py"
 mkdir -p "$TMP2/.w2c"
-ln -s "$SCRIPTS_SRC" "$TMP2/.w2c/scripts"
-out="$(bash "$CHECK" --source-repo "$ROOT" --client-repo "$TMP2" || true)"
-echo "$out" | grep -q '\[OK\] .w2c/scripts/w2c.py' || fail "expected OK w2c.py via scripts symlink"
-pass "check detects w2c.py when .w2c/scripts is symlink"
+echo '# state' > "$TMP2/.w2c/STATE.md"
+out="$(PATH="$CHECK_PATH" bash "$CHECK" --source-repo "$ROOT" --client-repo "$TMP2" || true)"
+echo "$out" | grep -q '\[OK\] .w2c/STATE.md' || fail "expected OK STATE.md"
+pass "check detects STATE.md ledger"
 
 for f in flutter-riverpod/_AGENTS.md flutter-bloc/_AGENTS.md ios/_AGENTS.md android/_AGENTS.md universal/_AGENTS.md; do
   if grep -E 'gsd-plan-milestone|do-next-runner|GSD prerequisite|openGSD|\bGSD\b|GSD-Pi|\.gsd/' "$ROOT/$f"; then
@@ -112,6 +115,19 @@ c2="$(grep -c 'BEGIN PLAYBOOK:PLANNING-ENGINE' "$FIX/AGENTS.md")"
 [[ "$c1" == 1 && "$c2" == 1 ]] || fail "planning marker not idempotent"
 pass "engine none overlay + idempotent wrapper"
 
+W2C_REPO="$(cd "$ROOT/../w2c" && pwd)"
+[[ -f "$W2C_REPO/src/w2c/cli.py" ]] || fail "sibling w2c checkout required at $ROOT/../w2c"
+W2C_BIN="$W2C_TEST_HOME/bin"
+mkdir -p "$W2C_BIN"
+cat > "$W2C_BIN/w2c" <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$W2C_REPO/src"
+exec python3 -m w2c "\$@"
+EOF
+chmod +x "$W2C_BIN/w2c"
+export PATH="$W2C_BIN:$PATH"
+command -v w2c >/dev/null || fail "w2c shim not on PATH"
+
 W2C_FIX="$(mktemp -d)"
 git -C "$W2C_FIX" init -q
 git -C "$W2C_FIX" config user.email test@example.com
@@ -119,7 +135,34 @@ git -C "$W2C_FIX" config user.name test
 w2c_out="$(bash "$ORCH" --source-repo "$ROOT" --client-repo "$W2C_FIX" --platform universal --engine w2c 2>&1)"
 echo "$w2c_out" | grep -q 'bootstrap GSD' && fail "w2c overlay warned to bootstrap GSD"
 grep -q 'work-to-chores' "$W2C_FIX/AGENTS.md" || fail "w2c planning text missing"
-[[ -L "$W2C_FIX/.w2c/scripts" ]] || fail ".w2c/scripts should be symlink"
-[[ -L "$W2C_FIX/.w2c/templates" ]] || fail ".w2c/templates should be symlink"
+grep -q 'Python CLI' "$W2C_FIX/AGENTS.md" || fail "wrapper should mention Python CLI"
+[[ ! -e "$W2C_FIX/.w2c/scripts" ]] || fail ".w2c/scripts should not be installed"
+[[ ! -e "$W2C_FIX/.w2c/templates" ]] || fail ".w2c/templates should not be installed"
 [[ -f "$W2C_FIX/.w2c/STATE.md" && ! -L "$W2C_FIX/.w2c/STATE.md" ]] || fail "STATE.md should be regular file"
-pass "w2c symlinks scripts/templates and keeps STATE.md real"
+[[ -f "$W2C_FIX/.w2c/config.toml" ]] || fail "missing .w2c/config.toml"
+git -C "$W2C_FIX" check-ignore -q .w2c/STATE.md || fail "STATE.md should be gitignored"
+grep -Fqx '.github/instructions/work-to-chores.instructions.md' "$W2C_FIX/.gitignore" || fail "copilot instructions should be gitignored"
+pass "w2c inits ledger, gitignores by default, no playbook symlink"
+
+W2C_TRACK="$(mktemp -d)"
+git -C "$W2C_TRACK" init -q
+git -C "$W2C_TRACK" config user.email test@example.com
+git -C "$W2C_TRACK" config user.name test
+bash "$ORCH" --source-repo "$ROOT" --client-repo "$W2C_TRACK" --platform universal --engine w2c --track >/dev/null
+git -C "$W2C_TRACK" check-ignore -q .w2c/STATE.md && fail "--track should not ignore STATE.md"
+mkdir -p "$W2C_TRACK/.w2c/runtime"
+echo x > "$W2C_TRACK/.w2c/runtime/events.jsonl"
+git -C "$W2C_TRACK" check-ignore -q .w2c/runtime/events.jsonl || fail "runtime still ignored with --track"
+grep -q 'track = true' "$W2C_TRACK/.w2c/config.toml" || fail "track true missing"
+pass "w2c --track keeps ledger committable and runtime ignored"
+
+CLI_HOME="$(mktemp -d)"
+install_out="$(HOME="$CLI_HOME" XDG_CONFIG_HOME="$CLI_HOME/.config" XDG_DATA_HOME="$CLI_HOME/.local/share" W2C_BIN_DIR="$CLI_HOME/.local/bin" env -u W2C_DATA_HOME -u W2C_CONFIG bash "$W2C_REPO/install.sh" --skip-skills --force 2>&1)" || true
+[[ -x "$CLI_HOME/.local/bin/w2c" ]] || fail "CLI shim missing: $install_out"
+help_out="$("$CLI_HOME/.local/bin/w2c" --help 2>&1)" || true
+echo "$help_out" | grep -q migrate || fail "w2c help missing migrate"
+[[ -d "$CLI_HOME/.local/share/w2c/src" ]] || fail "payload src missing"
+[[ -d "$CLI_HOME/.local/share/w2c/templates" ]] || fail "payload templates missing"
+[[ ! -L "$CLI_HOME/.local/share/w2c/src" ]] || fail "payload src should be a copy"
+rm -rf "$CLI_HOME"
+pass "OpenW2C install.sh copies payload and writes PATH shim"

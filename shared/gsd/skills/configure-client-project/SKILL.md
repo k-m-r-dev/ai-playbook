@@ -42,14 +42,14 @@ Scripts (from `PLAYBOOK_ROOT`):
 
 - `scripts/configure-client-check.sh` - read-only preflight.
 - `scripts/configure-client-project.sh` - **only command this skill executes for configuration writes**.
-- `scripts/install-w2c-to-project.sh` - W2C installer called by the orchestrator for `--engine w2c`.
+- PATH `w2c` from [OpenW2C/w2c](https://github.com/OpenW2C/w2c) — required for `--engine w2c` (`w2c init`).
 - `scripts/install-client-ai-overlay.sh` - overlay installer called by the orchestrator.
 - `scripts/bootstrap-gsd-workflow.sh` - GSD bootstrap called by the orchestrator for `--engine gsd`.
 - `scripts/merge-mcp-template.sh` - MCP merge helper called by the orchestrator/bootstrap.
 
 ## Phase 0 - Preconditions
 
-1. Confirm `PLAYBOOK_ROOT` contains `shared/gsd/` and `scripts/configure-client-project.sh`.
+1. Confirm `PLAYBOOK_ROOT` contains `shared/gsd/` and `scripts/configure-client-project.sh`. For `--engine w2c`, confirm `w2c` is on PATH (https://github.com/OpenW2C/w2c).
 2. Require **absolute** `CLIENT_REPO`; verify directory exists.
 3. Verify `CLIENT_REPO` is a git repo (`git -C "$CLIENT_REPO" rev-parse --git-dir`).
 4. If `CLIENT_REPO` is inside `PLAYBOOK_ROOT`, stop unless user explicitly opts in to dogfood.
@@ -184,7 +184,7 @@ List GSD gaps as out-of-scope `SKIPPED`, not as questions.
 
 Install full W2C now?
 
-1. **yes** - run the orchestrator with `--engine w2c`; it calls `install-w2c-to-project.sh` and uses symlink mode to match overlay mode. `[recommended]`
+1. **yes** - run the orchestrator with `--engine w2c`; it requires PATH `w2c` and runs `w2c init`. `[recommended]`
 2. **no** - do not configure W2C; ask whether the engine should be `none` instead before proceeding.
 
 ### 3F - None questions (engine = none only)
@@ -220,7 +220,7 @@ bash "$PLAYBOOK_ROOT/scripts/configure-client-project.sh" \
   # GSD only: [--init-gsd] [--with-do-next] [--patch-mcp] [--harness-context] [--force]
 ```
 
-- Never call `install-client-ai-overlay.sh`, `bootstrap-gsd-workflow.sh`, `install-w2c-to-project.sh`, or `merge-mcp-template.sh` directly from this skill.
+- Never call `install-client-ai-overlay.sh`, `bootstrap-gsd-workflow.sh`, or `merge-mcp-template.sh` directly from this skill. For W2C, the orchestrator calls `w2c init` (PATH `w2c` required).
 - Never pass GSD flags with `--engine w2c` or `--engine none`.
 - For W2C, default install mode is symlink mode because the orchestrator receives the same `--mode symlink` as overlay.
 - Do **not** pass `--interactive` to bootstrap. The skill interviews delivery profile values in chat.
@@ -289,7 +289,7 @@ Print:
 
 - "Merge playbook-gsd into `.mcp.json` manually..."
 - "Edit paths in the template yourself..."
-- "Run `install-w2c-to-project.sh` yourself..."
+- "Run `w2c init` yourself..."
 
 Those are only valid under **Deferred** when the user chose **no**.
 

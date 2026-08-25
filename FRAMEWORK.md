@@ -122,7 +122,7 @@ Merge `config/claude.settings.local.example.json` into `.claude/settings.local.j
 1. Install overlay: `--platform universal`
 2. **Settings → MCP**: add graphify server — e.g. `graphify mcp start` if `uv tool install graphifyy` is on your PATH, or `uvx graphifyy mcp start` without a global install
 3. Enable **gsd-workflow** MCP for GSD skills under `.cursor/skills/`
-4. **Configure client** (recommended): exclusive `--engine gsd|w2c|none` via `scripts/configure-client-project.sh` — GSD runs overlay + `bootstrap-gsd-workflow.sh`; W2C runs overlay + `install-w2c-to-project.sh` (default `--mode symlink` for `.w2c/scripts` and `.w2c/templates`); `--engine none` is overlay only. Or use the **`configure-client-project`** skill for a guided interview + single CLI call.
+4. **Configure client** (recommended): exclusive `--engine gsd|w2c|none` via `scripts/configure-client-project.sh` — GSD runs overlay + `bootstrap-gsd-workflow.sh`; W2C requires `w2c` on PATH ([OpenW2C/w2c](https://github.com/OpenW2C/w2c)) then overlay + `w2c init`; `--engine none` is overlay only. Or use the **`configure-client-project`** skill for a guided interview + single CLI call.
 5. **Manual GSD fallback**: `bootstrap-gsd-workflow.sh --init-gsd --patch-mcp --with-do-next`
 6. **Preflight** (read-only): `scripts/configure-client-check.sh --source-repo <playbook> --client-repo <client>`
 7. Rules in `.cursor/rules/` enforce ledger + token budget
@@ -136,7 +136,7 @@ Merge `config/claude.settings.local.example.json` into `.claude/settings.local.j
 | `do-next` | `do next` | Custom workflow unit (smoke, gates, slice commits) |
 | `do-next-runner` | `$do-next-runner` | Auto-chain do-next units |
 
-Canonical templates: `shared/gsd/`. GSD milestone skills require `.gsd/` bootstrapped; W2C clients use `.w2c/` via `install-w2c-to-project.sh` instead — not every client needs `.gsd/`.
+Canonical templates: `shared/gsd/`. GSD milestone skills require `.gsd/` bootstrapped; W2C clients use `.w2c/` via [OpenW2C/w2c](https://github.com/OpenW2C/w2c) (`w2c init`) instead — not every client needs `.gsd/`.
 
 Legacy `.cursorrules` at repo root is optional; prefer `.cursor/rules/`.
 
@@ -206,7 +206,7 @@ bash scripts/configure-client-project.sh \
 | `--engine` | Installs |
 |------------|----------|
 | `gsd` | overlay → `bootstrap-gsd-workflow.sh` (+ optional GSD flags) |
-| `w2c` | overlay → `install-w2c-to-project.sh` (symlink `.w2c/scripts`, `.w2c/templates` by default) |
+| `w2c` | overlay → `w2c init` (requires [OpenW2C/w2c](https://github.com/OpenW2C/w2c) on PATH) |
 | `none` | overlay only — no `.gsd/` or `.w2c/` |
 
 ## Choosing a platform overlay

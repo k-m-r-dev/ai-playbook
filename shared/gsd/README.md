@@ -21,7 +21,7 @@ Canonical source for GSD workflow rules, do-next tooling, and multi-IDE skill te
 0. configure-client-project (skill or CLI)  -> asks exclusive engine: gsd | w2c | none
 1. install-client-ai-overlay.sh             -> overlay (symlinked _AGENTS.md is architecture-only)
 2. bootstrap-gsd-workflow.sh              -> .gsd/ (GSD-only; --interactive for TTY delivery-profile interview)
-   — or install-w2c-to-project.sh          -> .w2c/ (W2C-only; symlink scripts/templates by default)
+   — or w2c init (https://github.com/OpenW2C/w2c) -> .w2c/ (W2C-only)
    — or --engine none                      -> overlay only; skip .gsd/ and .w2c/
 3. $gsd-plan-milestone / work to chores    -> ROADMAP or .w2c/ queue
 4. do next / $do-next-runner              -> GSD custom workflow
@@ -56,7 +56,7 @@ bash scripts/configure-client-project.sh \
 | `--engine` | Runs |
 |------------|------|
 | `gsd` | overlay → `bootstrap-gsd-workflow.sh` (+ optional GSD flags) |
-| `w2c` | overlay → `install-w2c-to-project.sh` (default symlink `.w2c/scripts`, `.w2c/templates`) |
+| `w2c` | overlay → `w2c init` (requires https://github.com/OpenW2C/w2c on PATH) |
 | `none` | overlay only — no `.gsd/` or `.w2c/`; planning-engine wrapper block only |
 
 Install the skill locally: `bash scripts/update-personal-skill.sh configure-client-project`

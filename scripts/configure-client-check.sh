@@ -182,22 +182,32 @@ else
 fi
 
 # ── W2C ─────────────────────────────────────────────────────────────────────
-if [[ -f "$CLIENT_REPO/.w2c/scripts/w2c.py" ]]; then
-  status "OK" ".w2c/scripts/w2c.py"
+if command -v w2c >/dev/null 2>&1; then
+  status "OK" "w2c CLI on PATH"
 else
-  status "MISSING" ".w2c/scripts/w2c.py"
+  status "MISSING" "w2c CLI on PATH (https://github.com/OpenW2C/w2c — curl install.sh or pipx)"
 fi
 
-if [[ -d "$CLIENT_REPO/.w2c/templates" ]]; then
-  status "OK" ".w2c/templates/"
+if [[ -f "$CLIENT_REPO/.w2c/STATE.md" ]]; then
+  status "OK" ".w2c/STATE.md"
 else
-  status "MISSING" ".w2c/templates/"
+  status "MISSING" ".w2c/STATE.md"
 fi
 
 if [[ -f "$CLIENT_REPO/.github/instructions/work-to-chores.instructions.md" ]]; then
   status "OK" ".github/instructions/work-to-chores.instructions.md"
 else
   status "MISSING" ".github/instructions/work-to-chores.instructions.md"
+fi
+
+if git -C "$CLIENT_REPO" rev-parse --git-dir >/dev/null 2>&1; then
+  tracked_w2c="$(git -C "$CLIENT_REPO" ls-files -- .w2c .github/instructions/work-to-chores.instructions.md .github/instructions/do-chores.instructions.md 2>/dev/null || true)"
+  tracked_w2c="$(printf '%s\n' "$tracked_w2c" | grep -vE '^(\.w2c/runtime/|\.w2c/scripts/|\.w2c/templates/)' || true)"
+  if [[ -n "$(printf '%s' "$tracked_w2c" | tr -d '[:space:]')" ]]; then
+    status "PLACEHOLDER" "w2c-tracked (ledger/Copilot W2C files are in git — migrate untrack or keep --track)"
+  else
+    status "OK" "w2c not tracked in git (default)"
+  fi
 fi
 
 # ── Delegate to bootstrap --check when playbook scripts exist ───────────────
