@@ -124,6 +124,8 @@ If a change affects runtime safety (hooks, command dispatch, session lifecycle):
 bash scripts/verify-hook-safety.sh
 ```
 
+After editing canonical `hook-handler.cjs`, run `bash scripts/sync-hook-handler-platforms.sh` before verify so all platform copies stay byte-identical.
+
 ## Feeding a new agent session
 
 Give any agent this bootstrap prompt:
