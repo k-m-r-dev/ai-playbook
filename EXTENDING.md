@@ -126,6 +126,30 @@ bash scripts/verify-hook-safety.sh
 
 After editing canonical `hook-handler.cjs`, run `bash scripts/sync-hook-handler-platforms.sh` before verify so all platform copies stay byte-identical.
 
+### Cursor Ruflo hooks (invalid-JSON PreToolUse)
+
+Cursor requires JSON `permissionDecision` on stdout; Ruflo `hook-handler.cjs` prints human text. Playbook SoT:
+
+- `config/cursor-hooks/ruflo-cursor-adapter.cjs`
+- `config/cursor-hooks/fix-ruflo-cursor-hooks.cjs`
+- `config/cursor-hooks/README.md`
+
+Install to `~/.cursor/hooks/` (+ PATH wrapper):
+
+```bash
+bash scripts/install-ruflo-cursor-hooks.sh
+```
+
+After `ruflo init` in a client (helpers + Cursor settings):
+
+```bash
+bash scripts/repair-after-ruflo.sh \
+  --source-repo ~/path/to/ai-playbook \
+  --client-repo ~/path/to/client
+```
+
+Use `--skip-cursor-hooks` on repair when you only need helpers. Edit SoT under `config/cursor-hooks/`, then re-run the install script.
+
 ## Feeding a new agent session
 
 Give any agent this bootstrap prompt:

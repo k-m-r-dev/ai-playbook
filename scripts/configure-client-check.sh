@@ -181,6 +181,25 @@ else
   status "MISSING" ".workflow/scripts/playbook-gsd-health.sh (bootstrap --with-do-next)"
 fi
 
+# ── Cursor Ruflo hooks (invalid-JSON PreToolUse) ────────────────────────────
+adapter="$HOME/.cursor/hooks/ruflo-cursor-adapter.cjs"
+if [[ -f "$adapter" ]]; then
+  status "OK" "~/.cursor/hooks/ruflo-cursor-adapter.cjs"
+else
+  status "MISSING" "~/.cursor/hooks/ruflo-cursor-adapter.cjs (scripts/install-ruflo-cursor-hooks.sh)"
+fi
+
+claude_settings="$CLIENT_REPO/.claude/settings.json"
+if [[ -f "$claude_settings" ]]; then
+  if grep -q 'hook-handler\.cjs' "$claude_settings" 2>/dev/null && ! grep -q 'ruflo-cursor-adapter\.cjs' "$claude_settings" 2>/dev/null; then
+    status "MISSING" "Cursor-safe Ruflo hooks in .claude/settings.json (install-ruflo-cursor-hooks.sh --client-repo or repair-after-ruflo.sh)"
+  elif grep -q 'ruflo-cursor-adapter\.cjs' "$claude_settings" 2>/dev/null; then
+    status "OK" ".claude/settings.json uses ruflo-cursor-adapter"
+  else
+    status "OK" ".claude/settings.json (no Ruflo hook-handler commands)"
+  fi
+fi
+
 # ── W2C ─────────────────────────────────────────────────────────────────────
 if command -v w2c >/dev/null 2>&1; then
   status "OK" "w2c CLI on PATH"

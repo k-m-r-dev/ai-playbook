@@ -108,6 +108,13 @@ All frontends read **`CLAUDE.md`** first. Do not duplicate long architecture pro
 npx ruflo@latest init --wizard
 claude mcp add ruflo -- npx -y ruflo@latest mcp start
 
+# After ruflo init (Cursor users): restore helpers + Cursor-safe hooks
+bash scripts/repair-after-ruflo.sh \
+  --source-repo ~/path/to/ai-playbook \
+  --client-repo ~/path/to/client
+# Home-only adapter install: bash scripts/install-ruflo-cursor-hooks.sh
+# SoT: config/cursor-hooks/
+
 # graphify CLI (pick one)
 uv tool install graphifyy          # recommended on macOS/Linux — puts binary in ~/.local/bin
 # pip install graphifyy            # alternative if you prefer pip/venv
