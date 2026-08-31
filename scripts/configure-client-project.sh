@@ -13,10 +13,11 @@ Usage:
     [--mode symlink] [--existing-policy merge] \
     [--check] [--dry-run] \
     [--init-gsd] [--with-do-next] [--patch-mcp] [--harness-context] [--force]
-    [--track]
+    [--track] [--gh-user USERNAME]
 
 GSD flags are valid only with --engine gsd.
 --track is valid only with --engine w2c (commit .w2c ledger + Copilot W2C files).
+--gh-user writes .envrc for gh CLI multi-account (see docs/github-multi-account.md).
 EOF
 }
 
@@ -37,6 +38,7 @@ PATCH_MCP=0
 HARNESS_CONTEXT=0
 FORCE=0
 TRACK=0
+GH_USER=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -54,6 +56,7 @@ while [[ $# -gt 0 ]]; do
     --harness-context) HARNESS_CONTEXT=1; shift ;;
     --force) FORCE=1; shift ;;
     --track) TRACK=1; shift ;;
+    --gh-user) GH_USER="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) die "Unknown arg: $1" ;;
   esac
@@ -176,6 +179,7 @@ if [[ "$DRY_RUN" == 1 ]]; then
     none) info "would: skip GSD and W2C installers" ;;
   esac
   info "would: patch AGENTS.md and CLAUDE.md planning-engine markers"
+  [[ -n "$GH_USER" ]] && info "would: configure-client-git-account.sh --gh-user $GH_USER"
   exit 0
 fi
 
@@ -224,4 +228,11 @@ esac
 
 upsert_planning_engine "$CLIENT_REPO/AGENTS.md" "$ENGINE"
 upsert_planning_engine "$CLIENT_REPO/CLAUDE.md" "$ENGINE"
+
+if [[ -n "$GH_USER" ]]; then
+  bash "$SOURCE_REPO/scripts/configure-client-git-account.sh" \
+    --client-repo "$CLIENT_REPO" \
+    --gh-user "$GH_USER"
+fi
+
 info "done engine=$ENGINE"

@@ -27,6 +27,7 @@ echo "$out" | grep -q '\[DISCOVER\] default engine: w2c' || fail "expected defau
 echo "$out" | grep -q '\[MISSING\] w2c CLI on PATH' || fail "expected missing w2c CLI"
 echo "$out" | grep -q '\[MISSING\] .w2c/STATE.md' || fail "expected missing STATE.md"
 echo "$out" | grep -q '\[MISSING\] .github/instructions/work-to-chores.instructions.md' || fail "expected missing w2c copilot"
+echo "$out" | grep -q '\[MISSING\] gh account' || fail "expected missing gh account"
 pass "check reports w2c gaps and default w2c"
 
 mkdir -p "$TMP/.gsd"
@@ -166,3 +167,28 @@ echo "$help_out" | grep -q migrate || fail "w2c help missing migrate"
 [[ ! -L "$CLI_HOME/.local/share/w2c/src" ]] || fail "payload src should be a copy"
 rm -rf "$CLI_HOME"
 pass "OpenW2C install.sh copies payload and writes PATH shim"
+
+GIT_TMP="$(mktemp -d)"
+git -C "$GIT_TMP" init -q
+git -C "$GIT_TMP" config user.email test@example.com
+git -C "$GIT_TMP" config user.name test
+out="$(bash "$ROOT/scripts/configure-client-git-account.sh" --client-repo "$GIT_TMP" --check 2>&1)"
+echo "$out" | grep -q '\[MISSING\] gh account' || fail "git-account check expected MISSING"
+pass "git-account check reports MISSING"
+
+if command -v gh >/dev/null 2>&1; then
+  GH_USER="$(gh auth status -h github.com 2>&1 | sed -n 's/.* account \([^ (]*\).*/\1/p' | head -1 || true)"
+  if [[ -n "$GH_USER" ]]; then
+    bash "$ROOT/scripts/configure-client-git-account.sh" --client-repo "$GIT_TMP" --gh-user "$GH_USER" >/dev/null
+    grep -q 'BEGIN ai-playbook:gh-account' "$GIT_TMP/.envrc" || fail "envrc missing marker"
+    grep -q "gh auth token -u $GH_USER" "$GIT_TMP/.envrc" || fail "envrc missing gh user"
+    out="$(bash "$ROOT/scripts/configure-client-git-account.sh" --client-repo "$GIT_TMP" --check 2>&1)"
+    echo "$out" | grep -q '\[OK\] gh account' || fail "git-account check expected OK"
+    pass "git-account writes and verifies .envrc"
+  else
+    pass "git-account write test skipped (no gh login)"
+  fi
+else
+  pass "git-account write test skipped (no gh CLI)"
+fi
+rm -rf "$GIT_TMP"

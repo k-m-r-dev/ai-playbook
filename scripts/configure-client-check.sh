@@ -229,6 +229,11 @@ if git -C "$CLIENT_REPO" rev-parse --git-dir >/dev/null 2>&1; then
   fi
 fi
 
+# ── GitHub gh account (.envrc) ───────────────────────────────────────────────
+if [[ -x "$SOURCE_REPO/scripts/configure-client-git-account.sh" ]] || [[ -f "$SOURCE_REPO/scripts/configure-client-git-account.sh" ]]; then
+  bash "$SOURCE_REPO/scripts/configure-client-git-account.sh" --client-repo "$CLIENT_REPO" --check 2>/dev/null || true
+fi
+
 # ── Delegate to bootstrap --check when playbook scripts exist ───────────────
 bootstrap="$SOURCE_REPO/scripts/bootstrap-gsd-workflow.sh"
 if [[ -x "$bootstrap" || -f "$bootstrap" ]]; then

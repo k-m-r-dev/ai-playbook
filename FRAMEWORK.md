@@ -129,7 +129,7 @@ Merge `config/claude.settings.local.example.json` into `.claude/settings.local.j
 1. Install overlay: `--platform universal`
 2. **Settings → MCP**: add graphify server — e.g. `graphify mcp start` if `uv tool install graphifyy` is on your PATH, or `uvx graphifyy mcp start` without a global install
 3. Enable **gsd-workflow** MCP for GSD skills under `.cursor/skills/`
-4. **Configure client** (recommended): exclusive `--engine gsd|w2c|none` via `scripts/configure-client-project.sh` — GSD runs overlay + `bootstrap-gsd-workflow.sh`; W2C requires `w2c` on PATH ([OpenW2C/w2c](https://github.com/OpenW2C/w2c)) then overlay + `w2c init`; `--engine none` is overlay only. Or use the **`configure-client-project`** skill for a guided interview + single CLI call.
+4. **Configure client** (recommended): exclusive `--engine gsd|w2c|none` via `scripts/configure-client-project.sh` — GSD runs overlay + `bootstrap-gsd-workflow.sh`; W2C requires `w2c` on PATH ([OpenW2C/w2c](https://github.com/OpenW2C/w2c)) then overlay + `w2c init`; `--engine none` is overlay only. Or use the **`configure-client-project`** skill for a guided interview + single CLI call. Multi-account GitHub: see [docs/github-multi-account.md](docs/github-multi-account.md); configure writes per-repo `.envrc` via `--gh-user`.
 5. **Manual GSD fallback**: `bootstrap-gsd-workflow.sh --init-gsd --patch-mcp --with-do-next`
 6. **Preflight** (read-only): `scripts/configure-client-check.sh --source-repo <playbook> --client-repo <client>`
 7. Rules in `.cursor/rules/` enforce ledger + token budget

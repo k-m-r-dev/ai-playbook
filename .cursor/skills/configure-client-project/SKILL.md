@@ -42,6 +42,7 @@ Scripts (from `PLAYBOOK_ROOT`):
 
 - `scripts/configure-client-check.sh` - read-only preflight.
 - `scripts/configure-client-project.sh` - **only command this skill executes for configuration writes**.
+- `scripts/configure-client-git-account.sh` - writes/checks `.envrc` for gh CLI account (`--gh-user`).
 - PATH `w2c` from [OpenW2C/w2c](https://github.com/OpenW2C/w2c) — required for `--engine w2c` (`w2c init`).
 - `scripts/install-client-ai-overlay.sh` - overlay installer called by the orchestrator.
 - `scripts/bootstrap-gsd-workflow.sh` - GSD bootstrap called by the orchestrator for `--engine gsd`.
@@ -80,12 +81,11 @@ Capture every `[OK]`, `[MISSING]`, `[PLACEHOLDER]`, `[CONFIGURED]`, and `[DISCOV
 | `playbook-gsd-mcp` | MISSING | do-next claim bridge not in `.mcp.json` |
 | `do-next-health` | MISSING | Health script for do-next not installed |
 | `workflow-dir` | MISSING | `.workflow/` session scripts missing |
-| `w2c-cli` | MISSING | `w2c` is not on PATH |
-| `w2c-ledger` | MISSING | `.w2c/STATE.md` is missing |
+| `w2c-scripts` | MISSING | W2C command scripts are not installed |
 | `w2c-copilot` | MISSING | W2C Copilot instructions are not installed |
-| `w2c-tracked` | PLACEHOLDER | `.w2c/` ledger is committed; ask migrate untrack vs keep `--track` |
+| `gh-account` | MISSING | No `.envrc` with playbook `GH_TOKEN` for gh CLI (multi-account) |
 
-Also surface `[DISCOVER]` lines such as platform guess, GSD presence, W2C presence, and default engine. If there are **zero in-scope gaps**, say so and ask whether to run a no-op verification or stop.
+Also surface `[DISCOVER]` lines such as platform guess, GSD presence, W2C presence, default engine, **gh logged-in accounts**, and **suggested gh user** from remote SSH host. If there are **zero in-scope gaps**, say so and ask whether to run a no-op verification or stop.
 
 Then say: "I will ask about the platform, the planning engine, and each in-scope gap one at a time - yes to fix now, no to leave as-is."
 
@@ -189,23 +189,34 @@ Install full W2C now?
 1. **yes** - run the orchestrator with `--engine w2c`; it requires PATH `w2c` and runs `w2c init`. `[recommended]`
 2. **no** - do not configure W2C; ask whether the engine should be `none` instead before proceeding.
 
-If yes, ask: commit W2C ledger and Copilot instruction files to git?
-
-1. **no** - default; `.w2c/` and Copilot W2C instruction files are gitignored. `[recommended]`
-2. **yes** - pass `--track` so plans/STATE and Copilot instruction files can be committed (`.w2c/runtime/` stays ignored).
-
-If check reported `w2c-tracked` (PLACEHOLDER): the ledger is already in git. Ask whether to run `w2c migrate untrack` now (backup + gitignore + `git rm --cached`; other clones need `w2c migrate adopt` before pulling) `[recommended]`, or keep tracking with `--track`.
-
 ### 3F - None questions (engine = none only)
 
 Do not ask GSD or W2C gap questions. List missing GSD/W2C lines as out-of-scope `SKIPPED`. Only overlay is in scope.
 
-### 3G - Confirmation gate
+### 3G - GitHub gh account (always ask when `gh-account` is MISSING or on new init)
+
+Which GitHub account should agents use for `gh` (PRs, issues) in this repo?
+
+Explain: Git SSH keys and commit identity are separate from `gh`. Per-repo `.envrc` (direnv) sets `GH_TOKEN` from the gh keychain — no secret committed. See playbook `docs/github-multi-account.md` for global SSH/`includeIf` setup.
+
+List options from discovery:
+
+1. **`<username>`** — each account from `[DISCOVER] gh logged-in accounts`. Mark `[recommended]` the one matching `[DISCOVER] suggested gh user` when present.
+2. **skip** — do not write `.envrc` now (user runs `direnv` setup later).
+
+If `gh-account` is already `[OK]`, ask only whether to **keep**, **change** (pick another logged-in user), or **remove** — default keep.
+
+If user picks a username: pass `--gh-user USERNAME` to `configure-client-project.sh`. Remind them to run `direnv allow` once in the client repo after configure.
+
+If `gh` is not on PATH or no accounts logged in: explain they need `gh auth login` first; offer to skip and defer.
+
+### 3H - Confirmation gate
 
 Print a **locked plan**:
 
 - Platform
 - Engine: `gsd`, `w2c`, or `none`
+- **gh account:** FIX (`--gh-user`) / SKIP
 - Each in-scope gap -> FIX / SKIP
 - Out-of-scope engine gaps -> SKIPPED
 - Orchestrator flags that will run
@@ -226,13 +237,14 @@ bash "$PLAYBOOK_ROOT/scripts/configure-client-project.sh" \
   --engine gsd|w2c|none \
   --mode symlink \
   --existing-policy merge \
-  # W2C only: [--track]
   # GSD only: [--init-gsd] [--with-do-next] [--patch-mcp] [--harness-context] [--force]
+  # Any engine: [--gh-user USERNAME] when user approved gh account setup
+  # W2C only: [--track]
 ```
 
 - Never call `install-client-ai-overlay.sh`, `bootstrap-gsd-workflow.sh`, or `merge-mcp-template.sh` directly from this skill. For W2C, the orchestrator calls `w2c init` (PATH `w2c` required).
 - Never pass GSD flags with `--engine w2c` or `--engine none`.
-- For W2C, default is gitignore of `.w2c/` and Copilot W2C files; pass `--track` only when the user opted in.
+- For W2C, default install mode is symlink mode because the orchestrator receives the same `--mode symlink` as overlay.
 - Do **not** pass `--interactive` to bootstrap. The skill interviews delivery profile values in chat.
 
 ## Phase 5 - Write DELIVERY-PROFILE (engine = gsd only, if approved)
@@ -273,6 +285,8 @@ Report **PASS / FAIL / SKIPPED** per gap:
 | PASS | Gap was approved and is now OK |
 | FAIL | Gap was approved but still broken - fix or remediate now |
 | SKIPPED | User said no or the gap belongs to an unselected engine |
+
+For `gh-account`: PASS when `.envrc` contains playbook `GH_TOKEN` block; remind user to `direnv allow` if newly written.
 
 For `--engine w2c` or `--engine none`, missing GSD lines are `SKIPPED`, not failures. For `--engine none`, missing W2C lines are also `SKIPPED`.
 

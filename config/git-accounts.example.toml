@@ -1,0 +1,13 @@
+# Machine-local registry for configure-client-git-account discovery.
+# Copy to: ~/.config/ai-playbook/git-accounts.toml
+# Not committed — customize for your GitHub usernames and SSH host aliases.
+
+[[accounts]]
+label = "work"
+gh_user = "kmrfn"
+ssh_hosts = ["fn.github.com"]
+
+[[accounts]]
+label = "personal"
+gh_user = "k-m-r-dev"
+ssh_hosts = ["bitoron-tech.github.com", "mahmudur85.github.com", "OpenW2C.github.com"]
