@@ -56,9 +56,11 @@ gh() {
 
 ---
 
-## Approach B — Per-repo `direnv` + `.envrc` `[recommended for playbook clients]`
+## Approach B — Per-repo `direnv` + `.envrc` / `.envrc.local` `[recommended for playbook clients]`
 
-Commit a project `.envrc` that sets `GH_TOKEN` from the gh keychain (no secret on disk):
+Set `GH_TOKEN` from the gh keychain (no secret on disk). Two layouts are valid:
+
+**Greenfield** — playbook block in `.envrc`:
 
 ```bash
 # BEGIN ai-playbook:gh-account
@@ -67,14 +69,31 @@ export GH_TOKEN="$(gh auth token -u k-m-r-dev)"
 # END ai-playbook:gh-account
 ```
 
+**Existing client direnv** `[preferred when .envrc already loads dotenv / other hooks]` — keep project `.envrc`, put the token in gitignored `.envrc.local`:
+
+```bash
+# .envrc
+source_env_if_exists .envrc.local
+dotenv_if_exists .env
+```
+
+```bash
+# .envrc.local (machine-local; gitignore it)
+# BEGIN ai-playbook:gh-account
+export GH_TOKEN="$(gh auth token -u kmrfn)"
+# END ai-playbook:gh-account
+```
+
+`configure-client-git-account.sh --check` accepts either layout. On write, if `.envrc` already exists without the playbook marker, the script writes `.envrc.local` and adds `source_env_if_exists .envrc.local` — it does **not** overwrite client direnv.
+
 Then once per repo:
 
 ```bash
 direnv allow
 ```
 
-**Pros:** Account choice is **versioned with the repo**; Cursor/agents inherit `GH_TOKEN` when direnv is active; no global wrapper.  
-**Cons:** Requires [direnv](https://direnv.net/); each client repo needs its own `.envrc` (playbook `configure-client-project` can write it).
+**Pros:** Account choice is per-repo; Cursor/agents inherit `GH_TOKEN` when direnv is active; no global wrapper; coexists with existing `.envrc`.  
+**Cons:** Requires [direnv](https://direnv.net/); each client needs allow + (for local layout) `.envrc.local` gitignored.
 
 **When to use:** Client projects under ai-playbook + W2C/GSD where agents run `gh` for PRs/issues. **bitoron uses this.**
 

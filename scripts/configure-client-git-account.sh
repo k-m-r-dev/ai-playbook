@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Write or verify per-repo .envrc for gh CLI account selection (multi-account GitHub).
+# Write or verify per-repo direnv GH_TOKEN for gh CLI account selection (multi-account GitHub).
 set -euo pipefail
 
 usage() {
@@ -10,7 +10,13 @@ Usage:
     [--gh-user USERNAME] \
     [--check] [--dry-run] [--force]
 
-Writes .envrc with GH_TOKEN from gh keychain (no secret stored).
+Writes GH_TOKEN from gh keychain (no secret stored):
+  - Greenfield (no .envrc): writes playbook block into .envrc
+  - Existing .envrc (client direnv): writes block into .envrc.local and
+    ensures .envrc has source_env_if_exists .envrc.local
+  - --force: replace .envrc contents with the playbook block only
+    (destructive — prefer .envrc.local when .envrc already exists)
+
 Without --gh-user: --check only (or dry-run prints would-write).
 
 Requires: gh CLI logged in for the chosen user.
@@ -30,6 +36,8 @@ FORCE=0
 
 BEGIN_MARKER='# BEGIN ai-playbook:gh-account'
 END_MARKER='# END ai-playbook:gh-account'
+GH_TOKEN_RE='GH_TOKEN=.*gh auth token'
+SOURCE_LOCAL_RE='source_env(_if_exists)?[[:space:]]+\.envrc\.local'
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -92,17 +100,39 @@ list_gh_accounts() {
   gh auth status -h github.com 2>&1 | sed -n 's/.* account \([^ (]*\).*/\1/p' | sort -u
 }
 
-envrc_configured() {
+file_has_gh_token() {
+  local f="$1"
+  [[ -f "$f" ]] || return 1
+  grep -qE "$GH_TOKEN_RE" "$f" 2>/dev/null
+}
+
+envrc_sources_local() {
   local envrc="$CLIENT_REPO/.envrc"
   [[ -f "$envrc" ]] || return 1
-  grep -qF "$BEGIN_MARKER" "$envrc" 2>/dev/null || return 1
-  grep -qF 'GH_TOKEN="$(gh auth token' "$envrc" 2>/dev/null || return 1
+  grep -qE "$SOURCE_LOCAL_RE" "$envrc" 2>/dev/null
+}
+
+# Where GH_TOKEN is (or will be) declared for check messaging.
+gh_token_file() {
+  if [[ -f "$CLIENT_REPO/.envrc" ]] && file_has_gh_token "$CLIENT_REPO/.envrc"; then
+    printf '%s' "$CLIENT_REPO/.envrc"
+    return 0
+  fi
+  if envrc_sources_local && file_has_gh_token "$CLIENT_REPO/.envrc.local"; then
+    printf '%s' "$CLIENT_REPO/.envrc.local"
+    return 0
+  fi
+  return 1
+}
+
+envrc_configured() {
+  gh_token_file >/dev/null
 }
 
 envrc_gh_user() {
-  local envrc="$CLIENT_REPO/.envrc" user=""
-  [[ -f "$envrc" ]] || return 1
-  user="$(sed -n 's/.*gh auth token -u \([^)]*\).*/\1/p' "$envrc" | head -1)"
+  local f user=""
+  f="$(gh_token_file)" || return 1
+  user="$(sed -n 's/.*gh auth token -u \([^)]*\).*/\1/p' "$f" | head -1)"
   [[ -n "$user" ]] || return 1
   printf '%s' "$user"
 }
@@ -117,23 +147,67 @@ $END_MARKER
 EOF
 }
 
-write_envrc() {
-  local user="$1" envrc="$CLIENT_REPO/.envrc" tmp
+ensure_envrc_sources_local() {
+  local envrc="$CLIENT_REPO/.envrc"
+  if [[ ! -f "$envrc" ]]; then
+    printf 'source_env_if_exists .envrc.local\n' > "$envrc"
+    return 0
+  fi
+  if ! grep -qE "$SOURCE_LOCAL_RE" "$envrc"; then
+    printf '\nsource_env_if_exists .envrc.local\n' >> "$envrc"
+  fi
+}
+
+# Write/replace the marked playbook block in $1; preserve other lines.
+write_marked_block() {
+  local target="$1" user="$2" tmp
   tmp="$(mktemp)"
-  if [[ -f "$envrc" ]] && grep -qF "$BEGIN_MARKER" "$envrc"; then
+  if [[ -f "$target" ]] && grep -qF "$BEGIN_MARKER" "$target"; then
     awk -v begin="$BEGIN_MARKER" -v end="$END_MARKER" '
       $0 == begin { skip=1; next }
       $0 == end { skip=0; next }
       skip != 1 { print }
-    ' "$envrc" > "$tmp"
+    ' "$target" > "$tmp"
+    # Drop bare legacy GH_TOKEN lines outside the markers (upgrade path).
+    grep -vE "^[[:space:]]*export[[:space:]]+$GH_TOKEN_RE" "$tmp" > "${tmp}.2" || true
+    mv "${tmp}.2" "$tmp"
     render_envrc "$user" >> "$tmp"
-    mv "$tmp" "$envrc"
-  elif [[ -f "$envrc" && "$FORCE" != 1 ]]; then
-    rm -f "$tmp"
-    die ".envrc exists without playbook marker — use --force or edit manually"
+    mv "$tmp" "$target"
+  elif [[ -f "$target" ]]; then
+    # Keep non-token lines; drop bare GH_TOKEN exports; append marked block.
+    grep -vE "^[[:space:]]*export[[:space:]]+$GH_TOKEN_RE" "$target" > "$tmp" || true
+    # Avoid trailing blank spam: ensure single newline before block when file had content.
+    if [[ -s "$tmp" ]] && [[ -n "$(tr -d '[:space:]' < "$tmp")" ]]; then
+      printf '\n' >> "$tmp"
+    fi
+    render_envrc "$user" >> "$tmp"
+    mv "$tmp" "$target"
   else
-    render_envrc "$user" > "$envrc"
+    render_envrc "$user" > "$target"
     rm -f "$tmp"
+  fi
+}
+
+# Prefer .envrc.local when a client-owned .envrc already exists (unless --force).
+prefer_envrc_local() {
+  [[ "$FORCE" == 1 ]] && return 1
+  [[ -f "$CLIENT_REPO/.envrc" ]] || return 1
+  # Already on local pattern, or .envrc has no playbook marker (client direnv).
+  envrc_sources_local && return 0
+  ! grep -qF "$BEGIN_MARKER" "$CLIENT_REPO/.envrc" 2>/dev/null
+}
+
+write_envrc() {
+  local user="$1" dest
+  if prefer_envrc_local; then
+    ensure_envrc_sources_local
+    dest="$CLIENT_REPO/.envrc.local"
+    write_marked_block "$dest" "$user"
+    info "wrote $dest for gh user $user (sourced from .envrc)"
+  else
+    dest="$CLIENT_REPO/.envrc"
+    write_marked_block "$dest" "$user"
+    info "wrote $dest for gh user $user"
   fi
 }
 
@@ -141,11 +215,15 @@ write_envrc() {
 if [[ "$CHECK" == 1 || ( -z "$GH_USER" && "$DRY_RUN" != 1 ) ]]; then
   if envrc_configured; then
     user="$(envrc_gh_user || true)"
-    status "OK" "gh account (.envrc${user:+ user=$user})"
+    loc="$(gh_token_file)"
+    loc_base="$(basename "$loc")"
+    status "OK" "gh account ($loc_base${user:+ user=$user})"
+  elif [[ -f "$CLIENT_REPO/.envrc.local" ]] && file_has_gh_token "$CLIENT_REPO/.envrc.local" && ! envrc_sources_local; then
+    status "MISSING" "gh account (.envrc.local has GH_TOKEN but .envrc does not source_env_if_exists .envrc.local)"
   elif [[ -f "$CLIENT_REPO/.envrc" ]]; then
-    status "MISSING" "gh account (.envrc present but no playbook GH_TOKEN block)"
+    status "MISSING" "gh account (.envrc present but no playbook GH_TOKEN in .envrc or sourced .envrc.local)"
   else
-    status "MISSING" "gh account (.envrc — direnv GH_TOKEN for gh CLI)"
+    status "MISSING" "gh account (.envrc / .envrc.local — direnv GH_TOKEN for gh CLI)"
   fi
 
   if command -v gh >/dev/null 2>&1; then
@@ -179,16 +257,16 @@ if ! gh auth token -u "$GH_USER" >/dev/null 2>&1; then
   die "gh is not logged in for user $GH_USER — run: gh auth login -h github.com"
 fi
 
-if [[ -f "$CLIENT_REPO/.envrc" ]] && ! grep -qF "$BEGIN_MARKER" "$CLIENT_REPO/.envrc" 2>/dev/null && [[ "$FORCE" != 1 ]]; then
-  die ".envrc exists without playbook marker — use --force"
-fi
-
 if [[ "$DRY_RUN" == 1 ]]; then
-  info "dry-run would write .envrc for gh user $GH_USER"
+  if prefer_envrc_local; then
+    info "dry-run would write .envrc.local for gh user $GH_USER (and ensure .envrc sources it)"
+  else
+    info "dry-run would write .envrc for gh user $GH_USER"
+  fi
   render_envrc "$GH_USER"
   exit 0
 fi
 
 write_envrc "$GH_USER"
-info "wrote $CLIENT_REPO/.envrc for gh user $GH_USER"
 info "run: cd $CLIENT_REPO && direnv allow"
+info "tip: gitignore .envrc.local when it holds machine-local account wiring"
