@@ -1,0 +1,29 @@
+#!/bin/sh
+# Global pre-commit hook — catches accidental line-ending corruption
+# Applies to all repos on this machine (git config --global core.hooksPath ~/.git-hooks)
+
+THRESHOLD=100
+FAILED=0
+
+while IFS=$'\t' read -r added removed file; do
+    # Binary files report "-" in numstat; skip line-ending checks for those.
+    if [ "$added" = "-" ] || [ "$removed" = "-" ]; then
+        continue
+    fi
+    total=$((added + removed))
+    if [ "$total" -gt "$THRESHOLD" ]; then
+        echo "⚠️  LARGE DIFF DETECTED: $file (+$added -$removed lines)"
+        echo "   If you only changed a few lines, line endings may be corrupted (CRLF↔LF)."
+        echo "   Run: git diff -- \"$file\" | head -20"
+        echo "   To bypass (if intentional): git commit --no-verify"
+        FAILED=1
+    fi
+done <<< "$(git diff --cached --numstat)"
+
+if [ "$FAILED" -eq 1 ]; then
+    echo ""
+    echo "❌ Commit blocked. Verify line endings before proceeding."
+    exit 1
+fi
+
+exit 0
