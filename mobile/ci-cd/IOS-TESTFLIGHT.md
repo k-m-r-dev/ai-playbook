@@ -100,5 +100,6 @@ Use this after Fastlane + workflows exist in the app repo. Details: [SECRETS.md]
 | Upload OK, testers see nothing | exact group name spelling in ASC |
 | External testers blocked | Beta App Review for first external build of a version |
 | Archive signing fails | Match readonly + `update_code_signing_settings` for Release only |
+| `bundle` fails with `undefined method untaint` on CI | `Gemfile.lock` was generated with Bundler 1.x (system Ruby). Set `BUNDLED WITH` to Bundler 2.x (e.g. 2.5.23), pin `bundler:` in `ruby/setup-ruby`, add `.ruby-version` 3.2 |
 | Missing ASC vars in Fastlane | Root `.env` loaded (`Dotenv` in Fastfile and/or direnv). Standalone `fastlane match` expects `APP_STORE_CONNECT_API_KEY_*` (or Matchfile api_key) — `ASC_*` alone still prompts Apple ID/2FA for portal login |
 | Success criteria for first Match init | Remote Match repo has encrypted `certs/distribution/*` **and** `profiles/appstore/*.mobileprovision`; log shows encrypt + `git push` + “All required keys, certificates and provisioning profiles are installed” |
