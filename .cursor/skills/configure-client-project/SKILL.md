@@ -42,7 +42,7 @@ Scripts (from `PLAYBOOK_ROOT`):
 
 - `scripts/configure-client-check.sh` - read-only preflight.
 - `scripts/configure-client-project.sh` - **only command this skill executes for configuration writes**.
-- `scripts/configure-client-git-account.sh` - writes/checks `.envrc` or sourced `.envrc.local` for gh CLI account (`--gh-user`).
+- `scripts/configure-client-git-account.sh` - writes/checks `.envrc` for gh CLI account (`--gh-user`).
 - PATH `w2c` from [OpenW2C/w2c](https://github.com/OpenW2C/w2c) — required for `--engine w2c` (`w2c init`).
 - `scripts/install-client-ai-overlay.sh` - overlay installer called by the orchestrator.
 - `scripts/bootstrap-gsd-workflow.sh` - GSD bootstrap called by the orchestrator for `--engine gsd`.
@@ -76,14 +76,15 @@ Capture every `[OK]`, `[MISSING]`, `[PLACEHOLDER]`, `[CONFIGURED]`, and `[DISCOV
 | `overlay` | MISSING | No playbook overlay (`_AGENTS.md`) |
 | `workflow` | MISSING | No `.gsd/workflow/` rules pack |
 | `gsd.db` | MISSING | No GSD database |
-| `delivery-profile` | PLACEHOLDER / MISSING | Delivery settings not filled |
+| `delivery-profile` | PLACEHOLDER / MISSING | GSD delivery settings not filled (`.gsd/DELIVERY-PROFILE.md`) |
+| `w2c-delivery-profile` | PLACEHOLDER / MISSING | W2C delivery settings not filled (`.w2c/DELIVERY-PROFILE.md`) |
 | `gsd-workflow-mcp` | MISSING | Ledger MCP not in `.mcp.json` |
 | `playbook-gsd-mcp` | MISSING | do-next claim bridge not in `.mcp.json` |
 | `do-next-health` | MISSING | Health script for do-next not installed |
 | `workflow-dir` | MISSING | `.workflow/` session scripts missing |
 | `w2c-scripts` | MISSING | W2C command scripts are not installed |
 | `w2c-copilot` | MISSING | W2C Copilot instructions are not installed |
-| `gh-account` | MISSING | No `.envrc` / sourced `.envrc.local` `GH_TOKEN` for gh CLI (multi-account) |
+| `gh-account` | MISSING | No `.envrc` with playbook `GH_TOKEN` for gh CLI (multi-account) |
 
 Also surface `[DISCOVER]` lines such as platform guess, GSD presence, W2C presence, default engine, **gh logged-in accounts**, and **suggested gh user** from remote SSH host. If there are **zero in-scope gaps**, say so and ask whether to run a no-op verification or stop.
 
@@ -163,12 +164,13 @@ Configure delivery profile now?
 1. **yes** - ask Q-delivery (strategy, branch, cadence, review, tickets) one at a time. `[recommended]`.
 2. **no** - leave placeholder / missing (agents may stop at planning).
 
-If yes, ask the five delivery questions (same plain-English options as bootstrap `--interactive`):
+If yes, ask delivery questions one at a time (same plain-English options as bootstrap `--interactive`):
 
-- Integration strategy: `trunk-direct` / `feature-branch`
-- Integration branch: `main` / `develop` / other
-- Commit cadence: `slice` / `milestone`
-- Review unit: adapt to strategy (`none` / `pr-per-milestone` / `pr-per-slice`)
+- Integration strategy: `trunk-direct` / `feature-branch` / `gitflow` — mark `gitflow` `[recommended for mobile store apps]` when platform is ios/android/flutter-*
+- Integration branch: `main` / `develop` / other — for `gitflow` default day-to-day `develop`, production `main`
+- **Use CI/CD pointers in DELIVERY-PROFILE?** `yes` / `no` (independent of strategy). If yes, confirm path (default `ai-playbook/mobile/ci-cd/`)
+- Commit cadence: `slice` / `milestone` (GSD profile field only — not W2C `git_delivery`)
+- Review unit: adapt to strategy (`none` / `pr-per-milestone` / `pr-per-slice`; for gitflow prefer none for routine work + PR-to-main for release-bound)
 - External tickets: `none` / Linear / JIRA / GitHub Issues / other
 
 Derive checkpoint mode from review unit.
@@ -189,6 +191,26 @@ Install full W2C now?
 1. **yes** - run the orchestrator with `--engine w2c`; it requires PATH `w2c` and runs `w2c init`. `[recommended]`
 2. **no** - do not configure W2C; ask whether the engine should be `none` instead before proceeding.
 
+#### Gap: `w2c-delivery-profile` (MISSING or PLACEHOLDER)
+
+Ask only when W2C install is approved (or `.w2c/` already present) and `.w2c/DELIVERY-PROFILE.md` is missing/placeholder.
+
+Configure W2C delivery profile now?
+
+1. **yes** - interview below. `[recommended]` for mobile store apps; optional for others.
+2. **no** - leave missing (work-to-chores continues; Integration strategy stays planner-fill).
+
+If yes, ask **independently** (one at a time):
+
+1. **Integration strategy:** `trunk-direct` / `feature-branch` / `gitflow` — mark `gitflow` `[recommended for mobile store apps]` when platform is ios/android/flutter-*
+2. **Use CI/CD pointers in DELIVERY-PROFILE?** `yes` / `no` (independent — gitflow-only, CI-only, both, or neither are all valid).
+3. If CI = yes: confirm portable path — default `ai-playbook/mobile/ci-cd/` or custom.
+4. Integration branch: for `gitflow` default day-to-day `develop` + production `main`; otherwise `main` / `develop` / other.
+5. Review unit: adapt to strategy (gitflow: none for routine + PR-to-main for RC/hotfix/rollback).
+6. External tickets: `none` / Linear / JIRA / GitHub Issues / other.
+
+**Do not** re-ask commit cadence as a second source of truth — remind that cadence is `git_delivery` from `w2c init` / `.w2c/config.toml`.
+
 ### 3F - None questions (engine = none only)
 
 Do not ask GSD or W2C gap questions. List missing GSD/W2C lines as out-of-scope `SKIPPED`. Only overlay is in scope.
@@ -197,12 +219,12 @@ Do not ask GSD or W2C gap questions. List missing GSD/W2C lines as out-of-scope 
 
 Which GitHub account should agents use for `gh` (PRs, issues) in this repo?
 
-Explain: Git SSH keys and commit identity are separate from `gh`. Per-repo direnv sets `GH_TOKEN` from the gh keychain (`.envrc`, or `.envrc.local` when client `.envrc` already exists) — no secret committed. See playbook `docs/github-multi-account.md` for global SSH/`includeIf` setup.
+Explain: Git SSH keys and commit identity are separate from `gh`. Per-repo `.envrc` (direnv) sets `GH_TOKEN` from the gh keychain — no secret committed. See playbook `docs/github-multi-account.md` for global SSH/`includeIf` setup.
 
 List options from discovery:
 
 1. **`<username>`** — each account from `[DISCOVER] gh logged-in accounts`. Mark `[recommended]` the one matching `[DISCOVER] suggested gh user` when present.
-2. **skip** — do not write `.envrc` / `.envrc.local` now (user runs `direnv` setup later).
+2. **skip** — do not write `.envrc` now (user runs `direnv` setup later).
 
 If `gh-account` is already `[OK]`, ask only whether to **keep**, **change** (pick another logged-in user), or **remove** — default keep.
 
@@ -247,14 +269,56 @@ bash "$PLAYBOOK_ROOT/scripts/configure-client-project.sh" \
 - For W2C, default install mode is symlink mode because the orchestrator receives the same `--mode symlink` as overlay.
 - Do **not** pass `--interactive` to bootstrap. The skill interviews delivery profile values in chat.
 
-## Phase 5 - Write DELIVERY-PROFILE (engine = gsd only, if approved)
+## Phase 5 - Write DELIVERY-PROFILE (if approved)
 
-After the orchestrator completes, patch `$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md` with interviewed fields if the user approved delivery-profile configuration and bootstrap did not run interactively.
+After the orchestrator completes, write or patch the delivery profile when the user approved configuration:
+
+### Engine = gsd
+
+Patch `$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md` with interviewed fields if bootstrap did not run interactively.
 
 Rules:
 
 - Preserve `<!-- BEGIN AUTO:PROJECT-VALIDATION -->` block from bootstrap.
 - Never append `@_CLAUDE.md` / `@_AGENTS.md` sections.
+- If profile was already configured and user did not approve overwrite, skip.
+- When strategy is `gitflow`, record production branch `main` and day-to-day `develop` (unless overridden).
+- When CI pointers = yes, add a CI/CD spec row pointing at the chosen path (default `ai-playbook/mobile/ci-cd/`); when no, omit that row. Never write store secrets.
+
+### Engine = w2c
+
+Write `$CLIENT_REPO/.w2c/DELIVERY-PROFILE.md` using the sibling w2c compose helper when available:
+
+```bash
+PYTHONPATH="$PLAYBOOK_ROOT/../w2c/src${PYTHONPATH:+:$PYTHONPATH}" python3 - <<'PY'
+from pathlib import Path
+from w2c.delivery_profile import compose_delivery_profile
+
+root = Path("$CLIENT_REPO")
+out = root / ".w2c" / "DELIVERY-PROFILE.md"
+out.parent.mkdir(parents=True, exist_ok=True)
+text = compose_delivery_profile(
+    strategy="STRATEGY",          # trunk-direct | feature-branch | gitflow
+    ci_pointers=CI_YES,           # True | False
+    ci_path="CI_PATH",            # default ai-playbook/mobile/ci-cd/
+    integration_branch="BRANCH",
+    production_branch="PROD",     # main for gitflow else n/a
+    review_unit="REVIEW",
+    external_tickets="TICKETS",
+    project_title=root.name,
+)
+out.write_text(text if text.endswith("\n") else text + "\n", encoding="utf-8")
+print(f"wrote {out}")
+PY
+```
+
+If sibling `../w2c` is unavailable, copy from `$PLAYBOOK_ROOT/../w2c/templates/DELIVERY-PROFILE.md` when present, or write the same shape by hand from interviewed answers (gitflow section only when strategy=`gitflow`; CI section/row only when CI=yes).
+
+Rules:
+
+- `w2c init` must not be expected to create this file.
+- Never embed ASC/Match secrets or Fastlane procedures — link to the portable CI path only.
+- Do not change `.w2c/config.toml` `git_delivery` enum values when writing the profile.
 - If profile was already configured and user did not approve overwrite, skip.
 
 ## Phase 6 - Verify
@@ -286,7 +350,7 @@ Report **PASS / FAIL / SKIPPED** per gap:
 | FAIL | Gap was approved but still broken - fix or remediate now |
 | SKIPPED | User said no or the gap belongs to an unselected engine |
 
-For `gh-account`: PASS when `.envrc` or a sourced `.envrc.local` has `GH_TOKEN="$(gh auth token -u …)"`; remind user to `direnv allow` if newly written.
+For `gh-account`: PASS when `.envrc` contains playbook `GH_TOKEN` block; remind user to `direnv allow` if newly written.
 
 For `--engine w2c` or `--engine none`, missing GSD lines are `SKIPPED`, not failures. For `--engine none`, missing W2C lines are also `SKIPPED`.
 
