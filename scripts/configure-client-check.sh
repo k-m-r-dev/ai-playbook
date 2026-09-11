@@ -130,13 +130,13 @@ fi
 
 profile="$CLIENT_REPO/.gsd/DELIVERY-PROFILE.md"
 if [[ ! -f "$profile" ]]; then
-  status "MISSING" "DELIVERY-PROFILE.md"
+  status "MISSING" ".gsd/DELIVERY-PROFILE.md"
 elif grep -q 'main or develop' "$profile" 2>/dev/null; then
-  status "PLACEHOLDER" "DELIVERY-PROFILE.md (unconfigured — run configure-client-project or bootstrap --interactive)"
+  status "PLACEHOLDER" ".gsd/DELIVERY-PROFILE.md (unconfigured — run configure-client-project or bootstrap --interactive)"
 elif grep -qE '\[e\.g\.|TODO: add project verification' "$profile" 2>/dev/null; then
-  status "PLACEHOLDER" "DELIVERY-PROFILE.md (partial — review validation block)"
+  status "PLACEHOLDER" ".gsd/DELIVERY-PROFILE.md (partial — review validation block)"
 else
-  status "CONFIGURED" "DELIVERY-PROFILE.md"
+  status "CONFIGURED" ".gsd/DELIVERY-PROFILE.md"
 fi
 
 # ── Overlay state ───────────────────────────────────────────────────────────
@@ -211,6 +211,17 @@ if [[ -f "$CLIENT_REPO/.w2c/STATE.md" ]]; then
   status "OK" ".w2c/STATE.md"
 else
   status "MISSING" ".w2c/STATE.md"
+fi
+
+w2c_profile="$CLIENT_REPO/.w2c/DELIVERY-PROFILE.md"
+if [[ ! -f "$w2c_profile" ]]; then
+  status "MISSING" ".w2c/DELIVERY-PROFILE.md (optional — configure-client-project can write gitflow/CI pointers)"
+elif grep -q 'Compose rules (agents)' "$w2c_profile" 2>/dev/null; then
+  status "PLACEHOLDER" ".w2c/DELIVERY-PROFILE.md (unconfigured stub — run configure-client-project)"
+elif grep -qiE 'Integration strategy[[:space:]]*\|[[:space:]]*`?(gitflow|feature-branch|trunk-direct)`?' "$w2c_profile" 2>/dev/null; then
+  status "CONFIGURED" ".w2c/DELIVERY-PROFILE.md"
+else
+  status "PLACEHOLDER" ".w2c/DELIVERY-PROFILE.md (partial)"
 fi
 
 if [[ -f "$CLIENT_REPO/.github/instructions/work-to-chores.instructions.md" ]]; then

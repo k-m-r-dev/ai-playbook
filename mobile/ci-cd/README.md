@@ -10,6 +10,7 @@ Source of truth for **iOS and Android** release automation. App repos opt in by 
 | [VERSIONING.md](./VERSIONING.md) | Marketing vs build numbers |
 | [SECRETS.md](./SECRETS.md) | Secret **names**, GitHub Actions, local `.env` (never commit values) |
 | [IOS-TESTFLIGHT.md](./IOS-TESTFLIGHT.md) | Fastlane + GitHub Actions → TestFlight ([operator runbook 1–6](./IOS-TESTFLIGHT.md#operator-runbook-16)) |
+| [TROUBLESHOOTING-IOS-TESTFLIGHT.md](./TROUBLESHOOTING-IOS-TESTFLIGHT.md) | Simple guide: PKCS12 / Match / CI signing failures, fixes, and precautions |
 | [ANDROID-PLAY.md](./ANDROID-PLAY.md) | Android extension points (stub) |
 
 ## Design principles

@@ -127,6 +127,7 @@ configure_delivery_profile() {
     'Q1. How should agents integrate code into the main codebase?' 1 \
     "trunk-direct|Commit straight to main; no pull requests. Best for solo or fast-moving greenfield." \
     "feature-branch|Create a branch per milestone and open a pull request to merge. Good when you want a review before code lands." \
+    "gitflow|Feature branches merge to develop; release/hotfix PRs go to main. Recommended for mobile store apps." \
   )"
 
   # Q2 — Integration branch (custom menu because option 3 is free-text)

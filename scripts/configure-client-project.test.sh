@@ -26,6 +26,7 @@ out="$(PATH="$CHECK_PATH" bash "$CHECK" --source-repo "$ROOT" --client-repo "$TM
 echo "$out" | grep -q '\[DISCOVER\] default engine: w2c' || fail "expected default engine w2c"
 echo "$out" | grep -q '\[MISSING\] w2c CLI on PATH' || fail "expected missing w2c CLI"
 echo "$out" | grep -q '\[MISSING\] .w2c/STATE.md' || fail "expected missing STATE.md"
+echo "$out" | grep -q '\[MISSING\] .w2c/DELIVERY-PROFILE.md' || fail "expected missing w2c DELIVERY-PROFILE"
 echo "$out" | grep -q '\[MISSING\] .github/instructions/work-to-chores.instructions.md' || fail "expected missing w2c copilot"
 echo "$out" | grep -q '\[MISSING\] gh account' || fail "expected missing gh account"
 pass "check reports w2c gaps and default w2c"
