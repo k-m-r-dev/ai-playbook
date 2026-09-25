@@ -1,0 +1,22 @@
+You can check that the installed copy matches the playbook copy.
+
+The checker compares the two copies on this computer. It uses HTTP only as a name for that comparison. It does not call the network.
+
+```mermaid
+flowchart LR
+  playbook[Playbook copy] --> check[Version check]
+  hub[Installed copy] --> check
+```
+
+| Copy | Where it lives |
+| --- | --- |
+| Playbook | The repository |
+| Installed | The skills folder on this computer |
+
+The check prints whether the two copies match.
+
+1. no
+2. no
+3. no
+4. no
+5. no
