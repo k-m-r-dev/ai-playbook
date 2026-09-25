@@ -1,0 +1,3 @@
+Years later the neighbors in Daulatpur still told it, each one adding a detail the last had sworn was exact, and the telling was the plot.
+
+What they passed around was that Nabila, on a bus a week before the night in question, had carried Tagore's The Postmaster and watched her cousin short the rice. She was afraid. She said that word, in their version, and took the spare key without settling whose good it served. Someone then said the post-office locker hid a debt to a printer in Kushtia, the other track, and that she never returned the key and never forgave the taking. By the time the story reached the third courtyard it had looked back across a decade, and the gossip was the only engine left.

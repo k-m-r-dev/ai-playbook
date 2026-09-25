@@ -1,0 +1,3 @@
+You would have trusted her with the till.
+
+Last March, on the bus out of Daulatpur, Nabila held a torn copy of Tagore's The Postmaster and watched her cousin short the rice. She felt angry, and she used that word. She told him to fill the weight, paid the difference from her wages, and refused the spare key when he offered it. A week earlier, the week the first pages skip, the printer in Kushtia had sent a bill for plates, and that bill is the other track. Nabila carried it to the post-office locker, wrote her cousin's name on it, and left it where he would have to pay it. Every act on the page is plainly good.

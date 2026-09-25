@@ -1,0 +1,3 @@
+I, the narrator, will explain the situation before any scene, so that nothing is held back. Nabila clerks the Daulatpur post-office locker. Her cousin runs a rice stall and shorts the scale. A printer in Kushtia is owed for plates. She has Tagore's The Postmaster with her. She is afraid. She has the spare key. You should know all of this now.
+
+Only after that explanation does the bus aisle appear, a week earlier than the night, with the second ledger as the other track. She still does not return the key, and she still does not forgive the taking. The key's last place is not in the explanation: she leaves it in the rice, which you learn only here.

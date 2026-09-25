@@ -11,12 +11,15 @@ HUB_DIR="$HOME/.agents/skills"
 CURSOR_DIR="$HOME/.cursor/skills"
 CLAUDE_DIR="$HOME/.claude/skills"
 CODEX_DIR="$HOME/.codex/skills"
+COPILOT_DIR="$HOME/.copilot/skills"
 LOCKFILE="$HOME/.playbook-hub-lock.json"
 
 MODE="flat"  # flat (copy) or assemble
 DO_CURSOR=1
 DO_CLAUDE=1
 DO_CODEX=0
+DO_COPILOT=1
+CHECK_VERSIONS=0
 FORCE=0
 DRY_RUN=0
 SKILLS_FILTER=""
@@ -27,7 +30,7 @@ usage() {
 Usage: install-personal-agents-hub.sh [options]
 
 Assemble personal skills from ai-playbook into ~/.agents/skills hub
-with bridges to ~/.cursor/skills and ~/.claude/skills.
+with bridges to ~/.cursor/skills, ~/.claude/skills, and ~/.copilot/skills.
 
 Options:
   --assemble        Use assemble mode (SKILL.body.md + wrapper)
@@ -35,10 +38,13 @@ Options:
   --cursor          Install Cursor bridges (default: yes)
   --claude          Install Claude bridges (default: yes)
   --codex           Install Codex bridges
+  --copilot         Install Copilot bridges (default: yes)
   --no-cursor       Skip Cursor bridges
   --no-claude       Skip Claude bridges
+  --no-copilot      Skip Copilot bridges
   --skills LIST     Comma-separated skill names to install (default: all from manifest)
   --force           Overwrite existing skills even if unchanged
+  --check-versions  Compare playbook skill versions to the hub and exit
   --dry-run         Print actions without executing
   --no-agents       Skip do-next-runner agent files
   --source-repo PATH  Playbook root (default: parent of scripts/)
@@ -71,10 +77,13 @@ while [[ $# -gt 0 ]]; do
     --cursor) DO_CURSOR=1; shift ;;
     --claude) DO_CLAUDE=1; shift ;;
     --codex) DO_CODEX=1; shift ;;
+    --copilot) DO_COPILOT=1; shift ;;
     --no-cursor) DO_CURSOR=0; shift ;;
     --no-claude) DO_CLAUDE=0; shift ;;
+    --no-copilot) DO_COPILOT=0; shift ;;
     --skills) SKILLS_FILTER="$2"; shift 2 ;;
     --force) FORCE=1; shift ;;
+    --check-versions) CHECK_VERSIONS=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     --no-agents) INSTALL_AGENTS=0; shift ;;
     --source-repo) SOURCE_REPO="$2"; shift 2 ;;
@@ -120,7 +129,7 @@ print(data.get('$skill', {}).get('hash', ''))
 }
 
 lockfile_set() {
-  local skill="$1" hash="$2" mode="$3"
+  local skill="$1" hash="$2" mode="$3" version="${4:-}"
   local ts
   ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   local current
@@ -128,17 +137,38 @@ lockfile_set() {
   echo "$current" | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
-data['$skill'] = {'hash': '$hash', 'mode': '$mode', 'installed_at': '$ts'}
+data['$skill'] = {'hash': '$hash', 'mode': '$mode', 'installed_at': '$ts', 'version': '$version'}
 json.dump(data, sys.stdout, indent=2)
 print()
 " > "$LOCKFILE.tmp" && mv "$LOCKFILE.tmp" "$LOCKFILE"
+}
+
+skill_declared_version() {
+  local file="$1"
+  [[ -f "$file" ]] || { echo ""; return 0; }
+  python3 - "$file" <<'PY'
+import re, sys
+text = open(sys.argv[1], encoding="utf-8").read()
+match = re.search(r'(?m)^[ \t]*version:\s*"?([^"\s]+)"?', text)
+print(match.group(1) if match else "")
+PY
 }
 
 file_hash() {
   if [[ -f "$1" ]]; then
     shasum -a 256 "$1" | cut -c1-16
   elif [[ -d "$1" ]]; then
-    find "$1" -type f | sort | xargs shasum -a 256 2>/dev/null | shasum -a 256 | cut -c1-16
+    (
+      cd "$1" || exit 1
+      find . -type f \
+        -not -path '*/.venv/*' \
+        -not -path '*/__pycache__/*' \
+        -not -path '*/.pytest_cache/*' \
+        -not -path '*/.deepeval/*' \
+        | sed 's|^\./||' | sort | while IFS= read -r rel; do
+          shasum -a 256 "$rel"
+        done
+    ) | shasum -a 256 | cut -c1-16
   else
     echo "none"
   fi
@@ -208,7 +238,8 @@ install_flat_skill() {
       [[ "$base" == "SKILL.md" ]] && continue
       if [[ -d "$f" ]]; then
         rm -rf "$dest_dir/$base"
-        cp -R "$f" "$dest_dir/"
+        mkdir -p "$dest_dir/$base"
+        tar -C "$f"           --exclude .venv --exclude __pycache__ --exclude .pytest_cache --exclude .deepeval           -cf - . | tar -C "$dest_dir/$base" -xf -
       else
         cp "$f" "$dest_dir/"
       fi
@@ -257,11 +288,76 @@ install_do_next_runner_agents() {
   done
 }
 
+
+check_skill_versions() {
+  local fail=0 entry skill stype spath src_root
+  local src_dir hub_dir src_skill hub_skill src_ver hub_ver src_hash hub_hash
+  local bridge dest linked
+  local -a bridges=()
+  [[ "$DO_CURSOR" == 1 ]] && bridges+=("$CURSOR_DIR")
+  [[ "$DO_CLAUDE" == 1 ]] && bridges+=("$CLAUDE_DIR")
+  [[ "$DO_CODEX" == 1 ]] && bridges+=("$CODEX_DIR")
+  [[ "$DO_COPILOT" == 1 ]] && bridges+=("$COPILOT_DIR")
+
+  while IFS= read -r entry; do
+    [[ -z "$entry" ]] && continue
+    IFS=$'\t' read -r skill stype spath src_root <<< "$entry"
+    src_root="${src_root:-$GSD_ROOT}"
+    if [[ "$stype" == "flat" || "$stype" == "assembled" ]]; then
+      src_dir="$src_root/$spath"
+    else
+      src_dir="$HUB_DIR/$skill"
+    fi
+    src_skill="$src_dir/SKILL.md"
+    src_ver="$(skill_declared_version "$src_skill")"
+    [[ -n "$src_ver" ]] || continue
+
+    hub_dir="$HUB_DIR/$skill"
+    hub_skill="$hub_dir/SKILL.md"
+    if [[ ! -f "$hub_skill" ]]; then
+      printf '%s source=%s hub=MISSING STALE\n' "$skill" "$src_ver"
+      fail=1
+      continue
+    fi
+    hub_ver="$(skill_declared_version "$hub_skill")"
+    src_hash="$(file_hash "$src_dir")"
+    hub_hash="$(file_hash "$hub_dir")"
+    if [[ "$hub_ver" != "$src_ver" || "$hub_hash" != "$src_hash" ]]; then
+      printf '%s source=%s hub=%s hash=%s/%s STALE\n' "$skill" "$src_ver" "$hub_ver" "$src_hash" "$hub_hash"
+      fail=1
+    else
+      printf '%s source=%s hub=%s ok\n' "$skill" "$src_ver" "$hub_ver"
+    fi
+    for bridge in "${bridges[@]}"; do
+      dest="$bridge/$skill"
+      if [[ -L "$dest" ]]; then
+        linked="$(readlink "$dest")"
+        if [[ "$linked" != "$hub_dir" ]]; then
+          printf '%s bridge=%s STALE not hub symlink\n' "$skill" "$dest"
+          fail=1
+        fi
+      else
+        printf '%s bridge=%s STALE not a symlink\n' "$skill" "$dest"
+        fail=1
+      fi
+    done
+  done < <(parse_manifest)
+
+  if [[ "$fail" != 0 ]]; then
+    exit 1
+  fi
+  exit 0
+}
+
 # --- Main ---
 info "Playbook: $PLAYBOOK_ROOT"
 info "Hub: $HUB_DIR"
 info "Mode: $MODE"
 [[ "$DRY_RUN" == 1 ]] && info "DRY RUN"
+
+if [[ "$CHECK_VERSIONS" == 1 ]]; then
+  check_skill_versions
+fi
 
 INSTALLED=0
 SKIPPED=0
@@ -290,6 +386,7 @@ while IFS= read -r entry; do
       [[ "$DO_CURSOR" == 1 ]] && bridge_symlink "$HUB_DIR" "$CURSOR_DIR" "$skill"
       [[ "$DO_CLAUDE" == 1 ]] && bridge_symlink "$HUB_DIR" "$CLAUDE_DIR" "$skill"
       [[ "$DO_CODEX" == 1 ]] && bridge_symlink "$HUB_DIR" "$CODEX_DIR" "$skill"
+      [[ "$DO_COPILOT" == 1 ]] && bridge_symlink "$HUB_DIR" "$COPILOT_DIR" "$skill"
       SKIPPED=$((SKIPPED + 1))
       continue
     fi
@@ -315,10 +412,12 @@ while IFS= read -r entry; do
   [[ "$DO_CURSOR" == 1 ]] && bridge_symlink "$HUB_DIR" "$CURSOR_DIR" "$skill"
   [[ "$DO_CLAUDE" == 1 ]] && bridge_symlink "$HUB_DIR" "$CLAUDE_DIR" "$skill"
   [[ "$DO_CODEX" == 1 ]] && bridge_symlink "$HUB_DIR" "$CODEX_DIR" "$skill"
+  [[ "$DO_COPILOT" == 1 ]] && bridge_symlink "$HUB_DIR" "$COPILOT_DIR" "$skill"
 
   # Update lockfile
   if [[ "$DRY_RUN" != 1 ]]; then
-    lockfile_set "$skill" "$src_hash" "$MODE"
+    skill_ver="$(skill_declared_version "$src_root/$spath/SKILL.md")"
+    lockfile_set "$skill" "$src_hash" "$MODE" "$skill_ver"
   fi
 
   INSTALLED=$((INSTALLED + 1))

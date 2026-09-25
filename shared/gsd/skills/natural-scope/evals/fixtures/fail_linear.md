@@ -1,0 +1,3 @@
+You can follow this in the order it happened, from morning through evening.
+
+On Monday morning in Daulatpur, Nabila set a torn copy of Tagore's The Postmaster on the counter of her cousin's rice stall and watched him close his fist over a fistful of weight. She did not speak. She was afraid, and she said the word aloud, because the wet jute smell was not the feeling. She took the stall's spare key. Whether that was for the customers or for herself she did not settle. That afternoon she put the key in the rice. At dusk a boy from the printer in Kushtia brought the bill for the plates, and that bill is the other track, still unpaid when the stall closed. She did not return the key that evening, and she did not forgive the taking.

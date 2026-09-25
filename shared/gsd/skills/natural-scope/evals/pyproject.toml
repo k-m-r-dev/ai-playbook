@@ -1,0 +1,11 @@
+[project]
+name = "natural-scope-evals"
+version = "1.0.0"
+description = "DeepEval suite for the natural-scope writing skill"
+requires-python = ">=3.11,<3.14"
+dependencies = ["deepeval>=3.4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+addopts = "-q"
